@@ -1,0 +1,10 @@
+{
+  "name": "登録販売者 午後200問トレーニング",
+  "short_name": "登録販売者200",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f6f7f9",
+  "theme_color": "#f6f7f9",
+  "lang": "ja",
+  "description": "令和元〜5年度・午後1〜40問の200問を学習し、弱点を反復するトレーニングアプリ"
+}
