@@ -34,3 +34,21 @@
   .choiceRefLine{grid-template-columns:27px minmax(0,1fr);font-size:13px;line-height:1.5;gap:5px}
   .refNo{font-size:16px}.compactSep{white-space:normal}.answers.fixedAnswers{gap:5px}.answers.fixedAnswers .ans{min-height:46px;font-size:21px}
 }
+
+/* v5: 3統計・弱点判定・問題一覧 */
+.stats{grid-template-columns:repeat(3,1fr)}
+.statusChoice{margin-top:14px;padding:12px;border:1px solid #e1e4e8;border-radius:14px;background:#fafbfc}
+.statusChoiceBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.statusChoiceBtns button{border:1px solid #d6d9de;background:#fff;border-radius:11px;padding:11px;font-weight:700}
+.statusChoiceBtns .statusCorrect.on{background:#e9f7ee;border-color:#138a4a}
+.statusChoiceBtns .statusWeak.on{background:#fff1d8;border-color:#c98b1d}
+.controls.three{grid-template-columns:1fr 1fr 1fr}
+.gridModalBox{max-height:88dvh;overflow:auto}
+.gridHead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.gridHead h2{margin:0}
+.questionGrid{display:grid;grid-template-columns:repeat(8,1fr);gap:7px;margin-top:12px}
+.qJump{position:relative;aspect-ratio:1/1;border:1px solid #d9dde2;background:#fff;border-radius:10px;font-weight:700;min-width:0;padding:4px}
+.qJump b{position:absolute;right:3px;bottom:1px;font-size:14px;color:#d32f2f;line-height:1}
+.qJump.qDoneOk,.qJump.qDoneNg{border-color:#efb4b4}
+.qJump.current{outline:3px solid #20252b;outline-offset:1px}
+@media(max-width:520px){.questionGrid{grid-template-columns:repeat(6,1fr);gap:6px}.qJump{font-size:13px}.qJump b{font-size:12px}.controls.three{gap:6px}.controls.three button{padding:10px 6px}}

@@ -18,39 +18,32 @@ function load(){
 }
 function save(){ localStorage.setItem(K, JSON.stringify(S)); }
 function rec(id){
-  return S.progress[id] || (S.progress[id]={attempts:[], manualWeak:false, manualStatus:null});
-}
-function effMaster(q){
-  const r=S.progress[q.id];
-  if(!r) return false;
-  if(r.manualStatus==='mastered') return true;
-  if(r.manualStatus==='unmastered') return false;
-  if(!r.attempts.length) return false;
-  const everBad=r.attempts.some(a=>a.type!=='correct');
-  let streak=0;
-  for(let i=r.attempts.length-1;i>=0&&r.attempts[i].type==='correct';i--) streak++;
-  return everBad ? streak>=2 : r.attempts[0].type==='correct';
+  const r=S.progress[id] || (S.progress[id]={attempts:[], weakState:null});
+  if(!Array.isArray(r.attempts)) r.attempts=[];
+  if(!('weakState' in r)) r.weakState=null;
+  return r;
 }
 function effWeak(q){
   const r=S.progress[q.id];
-  return !!(r && (r.manualWeak || r.attempts.some(a=>a.type!=='correct')));
+  if(!r) return false;
+  if(typeof r.weakState==='boolean') return r.weakState;
+  // 旧版データからの移行用。新しく解答した時点で weakState に置き換わる。
+  return !!(r.manualWeak || r.manualStatus==='unmastered' || r.attempts.some(a=>a.type!=='correct'));
 }
 function lastCorrect(q){
   const r=S.progress[q.id];
   return !!(r?.attempts?.length && r.attempts.at(-1).type==='correct');
 }
 function renderStats(){
-  let seen=0,cor=0,w=0,m=0;
+  let seen=0,cor=0,w=0;
   Q.forEach(q=>{
     const r=S.progress[q.id];
     if(r?.attempts?.length){seen++; if(r.attempts.at(-1).type==='correct') cor++;}
     if(effWeak(q)) w++;
-    if(effMaster(q)) m++;
   });
   $('#seen').textContent=seen;
   $('#correct').textContent=cor;
   $('#weak').textContent=w;
-  $('#mastered').textContent=m;
   $('#pbar').style.width=(seen/720*100)+'%';
 }
 function chapterName(ch){ return ['','第1章','第2章','第3章','第4章','第5章'][ch]; }
@@ -165,6 +158,7 @@ function showActive(){
   }
   cur=findq(a.ids[a.index]);
   renderQuestion();
+  requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}));
 }
 
 function splitDisplayQuestion(text){
@@ -252,7 +246,7 @@ function scopeName(a){
 function renderQuestion(){
   const a=S.active,q=cur,r=rec(q.id),disp=splitDisplayQuestion(q.text);
   $('#scope').textContent=scopeName(a);
-  const result=a.type==='test'&&a.answers?.[q.id];
+  const result=a.type==='test'?a.answers?.[q.id]:null;
   $('#quiz').innerHTML=`<div class="card">
     <div class="meta"><span class="tag">${q.yearLabel}</span><span class="tag">${q.partLabel} 問${q.partNumber}</span><span class="tag">${chapterName(q.chapter)}・章内問${q.chapterQuestion}</span><span class="badge">${a.index+1}/${a.ids.length}</span></div>
     <div class="qtext">${esc(prettyStem(disp.stem))}</div>
@@ -260,20 +254,21 @@ function renderQuestion(){
     <div class="answers fixedAnswers" style="--n:${disp.choices?.length||5}">${answerButtons(disp.choices?.length||5)}</div>
     <button class="unknown">わからない</button>
     <div id="result" class="result"></div>
-    <div class="manual"><div class="small">手動指定（もう一度押すと解除）</div><div class="manualBtns"><button id="mw" class="weakbtn ${r.manualWeak?'on':''}">★ 弱点</button><button id="mm" class="masterbtn ${r.manualStatus==='mastered'?'on':''}">✓ 定着</button><button id="mu" class="unmasterbtn ${r.manualStatus==='unmastered'?'on':''}">↺ 未定着</button></div></div>
-    <div class="controls"><button id="prev" ${a.index===0?'disabled':''}>← 前へ</button><button id="next" class="primary">次へ →</button></div>
+    <div id="weakChoice" class="statusChoice hidden"><div class="small">次へ進む前に、この問題をどう扱うか選べます。</div><div class="statusChoiceBtns"><button id="statusCorrect" class="statusCorrect">✓ 正解</button><button id="statusWeak" class="statusWeak">★ 弱点</button></div></div>
+    <div class="controls three"><button id="prev" ${a.index===0?'disabled':''}>← 前へ</button><button id="questionList">一覧</button><button id="next" class="primary">次へ →</button></div>
     <button id="exit" class="btn" style="width:100%;margin-top:8px">終了・一覧へ戻る</button>
   </div>`;
   $$('.ans').forEach(b=>b.onclick=()=>answer(+b.dataset.n));
   $('.unknown').onclick=()=>answer(null);
   $('#prev').onclick=()=>{a.index--;updateAutoPosition();save();showActive();};
-  $('#next').onclick=()=>{a.index++;updateAutoPosition();save();showActive();};
+  $('#questionList').onclick=showQuestionGrid;
+  $('#next').onclick=goNext;
   $('#exit').onclick=()=>requestExit({kind:a.type==='review'?'list':'home',filter:a.reviewFilter||'all'});
-  $('#mw').onclick=()=>{r.manualWeak=!r.manualWeak;save();renderStats();renderQuestion();};
-  $('#mm').onclick=()=>{r.manualStatus=r.manualStatus==='mastered'?null:'mastered';save();renderStats();renderQuestion();};
-  $('#mu').onclick=()=>{r.manualStatus=r.manualStatus==='unmastered'?null:'unmastered';save();renderStats();renderQuestion();};
+  $('#statusCorrect').onclick=()=>setWeakState(false);
+  $('#statusWeak').onclick=()=>setWeakState(true);
   if(result) reveal(result.selected,result.correct,result.unknown);
 }
+
 function updateAutoPosition(){
   const a=S.active;
   if(a?.type==='normal'&&a.key) S.modeSessions[a.key]=a.index;
@@ -281,11 +276,27 @@ function updateAutoPosition(){
 function answer(n){
   const a=S.active,q=cur,ok=n===q.answer,unk=n===null,r=rec(q.id);
   r.attempts.push({type:unk?'unknown':ok?'correct':'wrong',selected:n,ts:Date.now()});
+  // 不正解・わからないは自動で弱点。正解は既定で弱点解除。
+  r.weakState=!(ok&&!unk);
   if(a.type==='test'){
     a.answers=a.answers||{};
     a.answers[q.id]={selected:n,correct:ok,unknown:unk};
   }
   a.dirty=true;save();renderStats();reveal(n,ok,unk);
+}
+function setWeakState(isWeak){
+  const r=rec(cur.id);
+  r.weakState=!!isWeak;
+  delete r.manualWeak;
+  save();renderStats();renderWeakChoice();
+}
+function renderWeakChoice(){
+  const box=$('#weakChoice');
+  if(!box) return;
+  const r=rec(cur.id);
+  box.classList.remove('hidden');
+  $('#statusWeak')?.classList.toggle('on',effWeak(cur));
+  $('#statusCorrect')?.classList.toggle('on',!effWeak(cur));
 }
 function reveal(n,ok,unk){
   $$('.ans').forEach(b=>{
@@ -298,6 +309,81 @@ function reveal(n,ok,unk){
   const res=$('#result');
   res.className='result show '+(unk?'unk':ok?'ok':'ng');
   res.innerHTML=`${unk?'正解：':ok?'⭕ 正解：':'❌ 不正解　正解：'}${CIRCLED[cur.answer]||cur.answer}<div class="explain"><b>解説</b>\n${esc(cur.explanation||'正答番号は公式解答PDFと照合済みです。')}${cur.explanationSource?`<div class="sourceLink"><a href="${cur.explanationSource}" target="_blank" rel="noopener">詳しい解説元（35189.jp）を開く ↗</a></div>`:''}</div>`;
+  renderWeakChoice();
+}
+
+function activeAnswer(a,id){
+  if(a.type==='test') return a.answers?.[id]||null;
+  const r=S.progress[id];
+  if(!r?.attempts?.length) return null;
+  const x=r.attempts.at(-1);
+  return {correct:x.type==='correct',unknown:x.type==='unknown',selected:x.selected};
+}
+function isAnsweredActive(a,id){ return !!activeAnswer(a,id); }
+function nextUnansweredIndex(a,from){
+  const n=a.ids.length;
+  for(let step=1;step<=n;step++){
+    const i=(from+step)%n;
+    if(!isAnsweredActive(a,a.ids[i])) return i;
+  }
+  return -1;
+}
+function goNext(){
+  const a=S.active;if(!a)return;
+  if(a.type==='review'){
+    if(a.index<a.ids.length-1){a.index++;save();showActive();}
+    else finishSession();
+    return;
+  }
+  const ni=nextUnansweredIndex(a,a.index);
+  if(ni>=0){a.index=ni;updateAutoPosition();save();showActive();return;}
+  if(!isAnsweredActive(a,a.ids[a.index])){alert('この問題が未回答です。');return;}
+  renderCompletionSummary();
+}
+function answerMark(a,id){
+  const x=activeAnswer(a,id);
+  if(!x) return '';
+  return x.correct?'○':'×';
+}
+function ensureQuestionGridModal(){
+  if($('#qGridModal')) return;
+  const d=document.createElement('div');d.id='qGridModal';d.className='modal';
+  d.innerHTML=`<div class="modalbox gridModalBox"><div class="gridHead"><h2>問題一覧</h2><button id="qGridClose" class="btn">閉じる</button></div><p class="small">○＝正解、×＝不正解・わからない、白＝未回答。番号を押すとその問題へ移動します。</p><div id="qGrid" class="questionGrid"></div></div>`;
+  document.body.appendChild(d);
+  $('#qGridClose').onclick=()=>d.classList.remove('show');
+}
+function showQuestionGrid(){
+  const a=S.active;if(!a)return;
+  ensureQuestionGridModal();
+  const g=$('#qGrid');
+  g.innerHTML=a.ids.map((id,i)=>{
+    const m=answerMark(a,id),cls=m==='○'?'qDoneOk':m==='×'?'qDoneNg':'';
+    return `<button class="qJump ${cls} ${i===a.index?'current':''}" data-i="${i}"><span>${i+1}</span>${m?`<b>${m}</b>`:''}</button>`;
+  }).join('');
+  g.querySelectorAll('.qJump').forEach(b=>b.onclick=()=>{
+    a.index=+b.dataset.i;updateAutoPosition();save();$('#qGridModal').classList.remove('show');showActive();
+  });
+  $('#qGridModal').classList.add('show');
+}
+function renderCompletionSummary(){
+  const a=S.active;if(!a)return;
+  const items=a.ids.map(findq).filter(Boolean);
+  const answers=items.map(q=>({q,x:activeAnswer(a,q.id)}));
+  const total=items.length,correct=answers.filter(z=>z.x?.correct).length,rate=total?correct/total*100:0;
+  const oneYear=[...new Set(items.map(q=>q.year))].length===1;
+  const fullYear=oneYear&&total===120&&new Set(items.map(q=>q.globalNumber)).size===120;
+  let extra='';
+  if(fullYear){
+    const by={};CHAPTER_ORDER.forEach(ch=>by[ch]={n:0,c:0});
+    answers.forEach(({q,x})=>{by[q.chapter].n++;if(x?.correct)by[q.chapter].c++;});
+    const rows=CHAPTER_ORDER.map(ch=>{const x=by[ch],p=x.n?x.c/x.n*100:0,need=Math.max(0,Math.ceil(x.n*.4)-x.c);return `<tr><td>${chapterName(ch)}</td><td>${x.c}/${x.n}</td><td>${p.toFixed(1)}%</td><td>${need?`40%まであと${need}問`:'40%以上'}</td></tr>`;}).join('');
+    const need70=Math.max(0,84-correct),pass=correct>=84&&Object.values(by).every(x=>x.n&&x.c/x.n>=.4);
+    extra=`<p>${need70?`70%（84問）まであと${need70}問`:'総合70%以上'}</p><table><tr><th>章</th><th>正解</th><th>率</th><th>基準</th></tr>${rows}</table><h3>${pass?'合格基準クリア':'基準未達'}</h3><p class="small">判定基準：総合70%以上かつ各章40%以上。</p>`;
+  }
+  $('#quiz').innerHTML=`<div class="card testSummary"><h2>終了</h2><p><b>${correct}/${total} 正解（${rate.toFixed(1)}%）</b></p>${extra}<div class="savebar"><button class="btn" id="summaryList">一覧を見る</button><button class="btn primary" id="done">ホームへ</button></div></div>`;
+  $('#summaryList').onclick=showQuestionGrid;
+  $('#done').onclick=()=>{S.active=null;save();renderHome();};
+  requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}));
 }
 
 function ensureExitModal(){
@@ -355,17 +441,16 @@ function renderTestSummary(){
 
 function listMatch(q,f){
   const r=S.progress[q.id];
+  if(f==='all') return true;
   if(f==='answered') return !!r?.attempts?.length;
   if(f==='correct') return lastCorrect(q);
   if(f==='weak') return effWeak(q);
-  if(f==='mastered') return rec(q.id).manualStatus==='mastered';
-  if(f==='unmastered') return rec(q.id).manualStatus==='unmastered';
-  return effWeak(q)||rec(q.id).manualStatus;
+  return false;
 }
-function filterLabel(f){return ({all:'弱点・手動指定',answered:'回答済み',correct:'正解',weak:'弱点',mastered:'定着',unmastered:'未定着'})[f]||'一覧';}
+function filterLabel(f){return ({all:'全問題',answered:'回答済み',correct:'正解',weak:'弱点'})[f]||'一覧';}
 function renderList(initialFilter='all',initialChapter='all'){
   setPage('listPage');renderStats();$('#scope').textContent=filterLabel(initialFilter);
-  $('#listPage').innerHTML=`<div class="card"><h2>問題一覧</h2><div class="row"><select id="lf" class="select"><option value="all">弱点・手動指定</option><option value="answered">回答済み</option><option value="correct">正解</option><option value="weak">弱点</option><option value="unmastered">未定着</option><option value="mastered">定着</option></select><select id="lc" class="select"><option value="all">全章</option>${CHAPTER_ORDER.map(c=>`<option value="${c}">第${c}章</option>`).join('')}</select></div><div id="li"></div></div>`;
+  $('#listPage').innerHTML=`<div class="card"><h2>問題一覧</h2><div class="row"><select id="lf" class="select"><option value="all">全問題</option><option value="answered">回答済み</option><option value="correct">正解</option><option value="weak">弱点</option></select><select id="lc" class="select"><option value="all">全章</option>${CHAPTER_ORDER.map(c=>`<option value="${c}">第${c}章</option>`).join('')}</select></div><div id="li"></div></div>`;
   $('#lf').value=initialFilter;$('#lc').value=String(initialChapter);
   function draw(){
     const f=$('#lf').value,c=$('#lc').value;
@@ -413,7 +498,6 @@ window.addEventListener('DOMContentLoaded',()=>{
   $('#seen').closest('.stat').onclick=()=>statDestination('answered');
   $('#correct').closest('.stat').onclick=()=>statDestination('correct');
   $('#weak').closest('.stat').onclick=()=>statDestination('weak');
-  $('#mastered').closest('.stat').onclick=()=>statDestination('mastered');
   $$('.stat').forEach(x=>{x.classList.add('statLink');x.setAttribute('role','button');x.tabIndex=0;});
   renderHome();
   if('serviceWorker'in navigator&&location.protocol.startsWith('http')) navigator.serviceWorker.register('./sw.js').catch(()=>{});
