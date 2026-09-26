@@ -52,3 +52,17 @@
 .qJump.qDoneOk,.qJump.qDoneNg{border-color:#efb4b4}
 .qJump.current{outline:3px solid #20252b;outline-offset:1px}
 @media(max-width:520px){.questionGrid{grid-template-columns:repeat(6,1fr);gap:6px}.qJump{font-size:13px}.qJump b{font-size:12px}.controls.three{gap:6px}.controls.three button{padding:10px 6px}}
+
+/* v6: 漢方暗記モード */
+.kanpoModeCard{border-color:#bdd8c6;background:#f8fcf9}
+.kanpoTop{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.kanpoTopBtns{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.kanpoCategory{margin-top:20px}.kanpoCategory>h2{font-size:18px;margin:0 2px 8px;padding-left:8px;border-left:5px solid #8eb99b}
+.kanpoItem{background:#fff;border:1px solid #e0e3e7;border-radius:16px;padding:12px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.025)}
+.kanpoHead{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}.kanpoName{font-weight:800;font-size:16px;line-height:1.5}
+.kanpoJudge{display:flex;gap:6px}.kanpoJudge button{width:42px;height:38px;border:1px solid #d8dce1;background:#fff;border-radius:10px;font-size:20px;font-weight:900}
+.kanpoJudge .kanpoOk.on{background:#e4f6ea;border-color:#16884a;color:#0b6e39}.kanpoJudge .kanpoNg.on{background:#fde9e9;border-color:#c83a3a;color:#a92323}
+.kanpoAnswer{width:100%;min-height:58px;margin-top:10px;border:1.5px dashed #c9ced5;background:#fff;border-radius:12px;padding:12px 13px;text-align:left;line-height:1.7;color:#b0b5bc}
+.kanpoAnswer.open{border-style:solid;background:#fafbfc;color:#17191c}.kanpoPlaceholder{white-space:pre-wrap}
+.kanpoBottom{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.kanpoBottom #kanpoSaveMsg{flex-basis:100%;color:#16884a;font-weight:700}
+@media(max-width:520px){.kanpoTop{align-items:flex-start;flex-direction:column}.kanpoTopBtns{width:100%}.kanpoTopBtns .btn{flex:1}.kanpoName{font-size:15px}.kanpoJudge button{width:40px;height:36px}.kanpoAnswer{min-height:54px;padding:11px}.kanpoBottom .btn{flex:1;min-width:44%}}

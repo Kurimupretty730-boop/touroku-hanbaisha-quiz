@@ -1,6 +1,128 @@
 const Q = window.QUIZ_QUESTIONS;
 const K = 'touroku720_v1';
 const CHAPTER_ORDER = [1, 2, 4, 3, 5];
+
+const KANPO_CATEGORIES = [
+  {name:'かぜ',items:[
+    ['麻黄湯（まおうとう）','インフルエンザに効くので、体力充実、寒気、体のふしぶしが痛む'],
+    ['葛根湯（かっこんとう）','かぜの初期、肩こり、筋肉痛（体力中等度以上）'],
+    ['小柴胡湯（しょうさいことう）','食欲不振、口の苦み、舌に白苔（はくたい）（体力中等度）'],
+    ['半夏厚朴湯（はんげこうぼくとう）','のどのつかえ（体力中等度をめやす）'],
+    ['麦門冬湯（ばくもんどうとう）','喉を潤すイメージ。たんが切れにくいとか咽頭の乾燥感とか。（冬とついているので水で潤すイメージ）（体力中等度以下）'],
+    ['柴胡桂枝湯（さいこけいしとう）','かぜの中期以降。体力中等度又はやや虚弱（ケイシときたら体が弱い人）'],
+    ['小青竜湯（しょうせいりゅうとう）','うすい水様の痰、アレルギー性鼻炎（体力中等度またはやや虚弱）'],
+    ['桂枝湯（けいしとう）','体力虚弱、汗が出る人のかぜの初期（葛根湯と麻黄湯は汗がでていたら使えない）'],
+    ['香蘇散（こうそさん）','体力虚弱、神経過敏で気分がふさぐ']
+  ]},
+  {name:'鎮痛',items:[
+    ['芍薬甘草湯（しゃくやくかんぞうとう）','こむらがえり（体力に関わらず）'],
+    ['薏苡仁湯（よくいにんとう）','関節や筋肉のはれや痛み（体力中等度）'],
+    ['麻杏薏甘湯（まきょうよくかんとう）','いぼ、手足のあれ（体力中等度）'],
+    ['疎経活血湯（そけいかっけつとう）','血を活性化させるからしびれに効く。（体力中等度）'],
+    ['釣藤散（ちょうとうさん）','慢性高血圧（体力に関わらない）（ちょうとうさん＝とうさんは高血圧）'],
+    ['当帰四逆加呉茱萸生姜湯（とうきしぎゃくかごしゅゆしょうきょうとう）','手足の冷えを感じ、下肢の冷え（体力中等度以下）'],
+    ['呉茱萸湯（ごしゅゆとう）','しゃっくり（体力中等度以下）'],
+    ['桂枝加朮附湯（けいしかじゅつぶとう）','体力虚弱、手足が冷える、尿量が少ない'],
+    ['桂枝加苓朮附湯（けいしかりょうじゅつぶとう）','手足が冷えてこわばり（体力虚弱）']
+  ]},
+  {name:'胃',items:[
+    ['平胃散（へいいさん）','胃がもたれて消化が悪い、下痢（体力中等度以上）'],
+    ['安中散（あんちゅうさん）','腹部筋肉が弛緩する傾向、神経性胃炎（体力中等度以下）'],
+    ['六君子湯（りっくんしとう）','体力中等度以下、食欲がなく、みぞおちがつかえて疲れやすい'],
+    ['人参湯（にんじんとう）','体力虚弱、疲れやすくて手足が冷える。']
+  ]},
+  {name:'腸',items:[
+    ['大黄甘草湯（だいおうかんぞうとう）','便秘（大黄牡丹皮湯とひっかけ注意）（大便歓迎とう）（体力に関わらず）'],
+    ['大黄牡丹皮湯（だいおうぼたんぴとう）','便秘しがちなものの月経不順（体力中等度以上）'],
+    ['桂枝加芍薬湯（けいしかしゃくやくとう）','しぶり腹（体力中等度以下）'],
+    ['麻子仁丸（ましにんがん）','ときに便が硬く塊状なものの便秘（コロコロの便、マシンガンで覚える）（体力中等度以下）']
+  ]},
+  {name:'心臓',items:[
+    ['苓桂朮甘湯（りょうけいじゅつかんとう）','めまい、ふらつきがあり（体力中等度以下）']
+  ]},
+  {name:'血圧',items:[
+    ['三黄瀉心湯（さんおうしゃしんとう）','便秘傾向＋高血圧の随伴症状（体力中等度以上）'],
+    ['七物降下湯（しちもつこうかとう）','高血圧に伴う随伴症状（体力中等度以下）']
+  ]},
+  {name:'痔',items:[
+    ['乙字湯（おつじとう）','いぼ痔、切れ痔（体力中等度以上）'],
+    ['芎帰膠艾湯（きゅうききょうがいとう）','痔出血（体力中等度以下）']
+  ]},
+  {name:'頻尿・排尿',items:[
+    ['猪苓湯（ちょれいとう）','体力にかかわらない、排尿痛'],
+    ['竜胆瀉肝湯（りゅうたんしゃかんとう）','尿の濁り（体力中等度以上）'],
+    ['牛車腎気丸（ごしゃじんきがん）','四肢が冷えて、尿量減少（体力中等度以下）'],
+    ['八味地黄丸（はちみじおうがん）','四肢が冷える、尿量減少や多尿（体力中等度以下）'],
+    ['六味丸（ろくみがん）','手足がほてる（体力中等度以下）']
+  ]},
+  {name:'月経・更年期障害',items:[
+    ['桂枝茯苓丸（けいしぶくりょうがん）','のぼせて足冷え。顔は暑いのに足は冷える。（比較的体力あり）'],
+    ['桃核承気湯（とうかくじょうきとう）','のぼせて便秘（体力中等度以上）'],
+    ['温清飲（うんせいいん）','皮膚はかさかさ（体力中等度）'],
+    ['五積散（ごしゃくさん）','感冒に適す（風邪に効く）（体力中等度またはやや虚弱）'],
+    ['温経湯（うんけいとう）','月経困難＋こしけ（おりもの）（体力中等度以下）'],
+    ['加味逍遙散（かみしょうようさん）','精神系、精神不安やいらだち（体力中等度以下）'],
+    ['柴胡桂枝乾姜湯（さいこけいしかんきょうとう）','更年期障害＋かぜの後期（体力中等度以下）'],
+    ['当帰芍薬散（とうきしゃくやくさん）','冷えや水分の巡りの悪さに（体力虚弱）'],
+    ['四物湯（しもつとう）','体力虚弱、冷え性、皮膚の乾燥、色艶の悪い（血の気が引いている人）']
+  ]},
+  {name:'皮膚',items:[
+    ['茵蔯蒿湯（いんちんこうとう）','便秘するものの蕁麻疹＋口内炎（体力中等度以上）'],
+    ['消風散（しょうふうさん）','皮膚疾患＋分泌物が多く＋局所の熱感（体力中等度以上）'],
+    ['十味敗毒湯（じゅうみはいどくとう）','化膿性皮膚疾患（体力中等度）'],
+    ['当帰飲子（とうきいんし）','分泌物の少ない（体力中等度以下）']
+  ]},
+  {name:'鼻',items:[
+    ['葛根湯加川芎辛夷（かっこんとうかせんきゅうしんい）','鼻づまり、蓄膿症、発汗傾向の著しい人に不向き（比較的体力あり）'],
+    ['荊芥連翹湯（けいがいれんぎょうとう）','皮膚の色が浅黒く（体力中等度以上）'],
+    ['辛夷清肺湯（しんいせいはいとう）','濃い鼻汁（体力中等度以上）'],
+    ['小青竜湯（しょうせいりゅうとう）','うすい水様の痰、アレルギー性鼻炎（体力中等度またはやや虚弱）']
+  ]},
+  {name:'滋養強壮',items:[
+    ['十全大補湯（じゅうぜんたいほとう）','体力虚弱なものの病後・術後の体力低下（体力虚弱）'],
+    ['補中益気湯（ほちゅうえっきとう）','体力虚弱で元気がなく、胃腸の働きが衰えて（体力虚弱）']
+  ]},
+  {name:'神経質など',items:[
+    ['柴胡加竜骨牡蛎湯（さいこかりゅうこつぼれいとう）','精神不安があって、便秘（体力中等度以上）'],
+    ['抑肝散（よくかんさん）','精神が高ぶり、イライラの不眠症（攻撃的な感情を抑える・カンとついてるから癇癪を抑えるイメージ）（体力中等度をめやす）'],
+    ['抑肝散加陳皮半夏（よくかんさんかちんぴはんげ）','イライラ（体力中等度をめやす）'],
+    ['酸棗仁湯（さんそうにんとう）','心身が疲れ、精神不安、不眠（疲れているのに寝れない）（体力中等度以下）'],
+    ['加味帰脾湯（かみきひとう）','心身が疲れ、血色が悪く、熱感を伴う（体力中等度以下）'],
+    ['桂枝加竜骨牡蛎湯（けいしかりゅうこつぼれいとう）','疲れやすく興奮しやすい人の不眠症（寝られない焦り、物音が気になって寝られない）（体力中等度以下）']
+  ]},
+  {name:'疳',items:[
+    ['小建中湯（しょうけんちゅうとう）','小児虚弱体質（体力虚弱）']
+  ]},
+  {name:'咳と痰',items:[
+    ['甘草湯（かんぞうとう）','外用では痔・脱肛の痛み（体力に関わらず）'],
+    ['五虎湯（ごことう）','咳が強く出る人。（虎のようにゴホゴホと吠えるイメージ）（体力中等度以上）'],
+    ['麻杏甘石湯（まきょうかんせきとう）','喉が乾く人の咳（かん「せき」だから咳）（体力中等度以上）'],
+    ['神秘湯（しんぴとう）','痰が少ないものの小児喘息（体力中等度）'],
+    ['半夏厚朴湯（はんげこうぼくとう）','のどのつかえ（体力中等度をめやす）'],
+    ['柴朴湯（さいぼくとう）','咽喉・食道部の異物感＋のどのつかえの記載なし（体力中等度）'],
+    ['麦門冬湯（ばくもんどうとう）','喉を潤すイメージ。たんが切れにくいとか咽頭の乾燥感とか。（冬とついているので水で潤すイメージ）（体力中等度以下）']
+  ]},
+  {name:'喉の痛み',items:[
+    ['桔梗湯（ききょうとう）','ときに咳が出るものの扁桃炎（体力に関わらず）'],
+    ['駆風解毒散（くふうげどくさん）・駆風解毒湯（くふうげどくとう）','喉が腫れて痛む扁桃炎（体力に関わらず）'],
+    ['響声破笛丸（きょうせいはてきがん）','しわがれ声（体力に関わらず）'],
+    ['白虎加人参湯（びゃっこかにんじんとう）','熱感と口渇が強いものの喉の渇き（体力中等度以上）']
+  ]},
+  {name:'肥満',items:[
+    ['防風通聖散（ぼうふうつうしょうさん）','体力充実、腹部に皮下脂肪が多く、便秘（ダイエットの漢方）'],
+    ['大柴胡湯（だいさいことう）','体力充実、腹部からみぞおちにかけて苦しい、肥満症（ストレス太り）'],
+    ['防已黄耆湯（ぼういおうぎとう）','体力中等度以下、汗をかきやすい、肥満、むくみ（水太り系の人向け）']
+  ]},
+  {name:'その他',items:[
+    ['黄連解毒湯（おうれんげどくとう）','二日酔い、鼻出血（体力中等度以上）'],
+    ['清上防風湯（せいじょうぼうふうとう）','赤鼻（酒さ）、にきび（体力中等度以上）']
+  ]}
+];
+let kanpoDraft=null;
+let kanpoDirty=false;
+let kanpoOnlyNg=false;
+let kanpoRevealed=new Set();
+function kanpoKey(label){ return label.replace(/（.*$/,'').trim(); }
 let S = load();
 let cur = null;
 let page = 'home';
@@ -10,7 +132,7 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 
 function blank(){
-  return {progress:{}, modeSessions:{}, savedSessions:[], active:null};
+  return {progress:{}, modeSessions:{}, savedSessions:[], active:null, kanpoProgress:{}};
 }
 function load(){
   try{return Object.assign(blank(), JSON.parse(localStorage.getItem(K)||'{}'));}
@@ -49,7 +171,7 @@ function renderStats(){
 function chapterName(ch){ return ['','第1章','第2章','第3章','第4章','第5章'][ch]; }
 function setPage(p){
   page=p;
-  ['home','quiz','listPage'].forEach(x=>$('#'+x).classList.add('hidden'));
+  ['home','quiz','listPage','kanpo'].forEach(x=>$('#'+x).classList.add('hidden'));
   $('#'+p).classList.remove('hidden');
   $('#tabHome').classList.toggle('active',p==='home');
   $('#tabWeak').classList.toggle('active',p==='listPage');
@@ -68,12 +190,14 @@ function renderHome(){
         <button class="modecard" id="normal"><h3>通常学習</h3><p>年度・章を選んで順番に学習。組み合わせごとの続き位置も保持します。</p></button>
         <button class="modecard" id="parallel"><h3>平行モード</h3><p>同じ章内の同じ問題番号を、令和元〜6年で6問連続して比較します。</p></button>
         <button class="modecard" id="test"><h3>テストモード</h3><p>1年度120問を本番順に解答し、章別正答率と合格基準を表示します。</p></button>
+        <button class="modecard kanpoModeCard" id="kanpoMode"><h3>🌿 漢方暗記モード</h3><p>漢方を一覧で確認。解説をタップで表示し、○・×を自分で付けて反復できます。</p></button>
       </div>
     </div>
     <div class="card"><h3 style="margin-top:0">保存した学習</h3><div id="saved"></div></div>`;
   $('#normal').onclick=chooseNormal;
   $('#parallel').onclick=chooseParallel;
   $('#test').onclick=chooseTest;
+  $('#kanpoMode').onclick=startKanpo;
   renderSaved();
 }
 
@@ -209,10 +333,13 @@ function prettyStem(stem){
   let s=String(stem||'').replace(/\r/g,'').trim();
   // a/b/c/d/e の各記述を必ず独立行へ。PDF抽出で直前に改行が落ちた場合にも対応。
   s=s.replace(/[ \t　]*([ａｂｃｄｅ])\s+/g,'\n$1 ');
-  s=s.replace(/。(?=(?:\d+(?:\.\d+)?\s*)?mL\s*中)/g,'。\n');
+  // 「どれか。」等の直後に配合量が続くPDF抽出崩れを強制的に改行。
+  s=s.replace(/。\s*(?=[０-９0-9]+\s*(?:錠|カプセル|包|粒|枚|mL|ｍL|ｍＬ|ML|g|ｇ)\s*中)/g,'。\n');
+  // 「9錠中アセトアミノフェン」「60mL 中ジヒドロ...」を見出しと成分で分離。
+  s=s.replace(/([０-９0-9]+\s*(?:錠|カプセル|包|粒|枚|mL|ｍL|ｍＬ|ML|g|ｇ)\s*中)\s*/g,'$1\n');
   s=s.replace(/\n{3,}/g,'\n\n').trim();
   // 配合量の羅列は、単位の直後で次の成分名が続く場合のみ改行。
-  s=s.replace(/(\d+(?:\.\d+)?\s*(?:mg|g|mL|μg|µg))(?=[ァ-ヶ一-龠々A-Za-z])/g,'$1\n');
+  s=s.replace(/([０-９0-9]+(?:[.．][０-９0-9]+)?\s*(?:mg|ｍｇ|g|ｇ|mL|ｍL|ｍＬ|μg|µg))\s*(?=[ァ-ヶ一-龠々A-Za-zｄｌＤＬ])/g,'$1\n');
   return s;
 }
 function parseChoiceParts(t,headers){
@@ -465,6 +592,74 @@ function renderList(initialFilter='all',initialChapter='all'){
   }
   $('#lf').onchange=draw;$('#lc').onchange=draw;draw();
 }
+
+function startKanpo(){
+  if(!S.kanpoProgress || typeof S.kanpoProgress!=='object') S.kanpoProgress={};
+  kanpoDraft=JSON.parse(JSON.stringify(S.kanpoProgress));
+  kanpoDirty=false;kanpoOnlyNg=false;kanpoRevealed=new Set();
+  renderKanpo();
+}
+function kanpoStats(){
+  const keys=[...new Set(KANPO_CATEGORIES.flatMap(c=>c.items.map(x=>kanpoKey(x[0]))))];
+  let ok=0,ng=0;
+  keys.forEach(k=>{if(kanpoDraft?.[k]==='ok')ok++;else if(kanpoDraft?.[k]==='ng')ng++;});
+  return {total:keys.length,ok,ng,blank:keys.length-ok-ng};
+}
+function renderKanpo(){
+  setPage('kanpo');renderStats();$('#scope').textContent=kanpoOnlyNg?'漢方 ×のみ':'漢方暗記';
+  const st=kanpoStats();
+  const cats=KANPO_CATEGORIES.map((cat,ci)=>{
+    const items=cat.items.map((item,ii)=>({label:item[0],desc:item[1],key:kanpoKey(item[0]),rid:`k${ci}_${ii}`}))
+      .filter(x=>!kanpoOnlyNg||kanpoDraft?.[x.key]==='ng');
+    if(!items.length) return '';
+    return `<section class="kanpoCategory"><h2>${esc(cat.name)}</h2>${items.map(x=>{
+      const state=kanpoDraft?.[x.key]||'';
+      const open=kanpoRevealed.has(x.rid);
+      return `<article class="kanpoItem" data-key="${esc(x.key)}" data-rid="${x.rid}">
+        <div class="kanpoHead"><div class="kanpoName">${esc(x.label)}</div><div class="kanpoJudge"><button class="kanpoOk ${state==='ok'?'on':''}" data-state="ok">○</button><button class="kanpoNg ${state==='ng'?'on':''}" data-state="ng">×</button></div></div>
+        <button class="kanpoAnswer ${open?'open':''}" data-reveal="${x.rid}" aria-expanded="${open?'true':'false'}"><span class="kanpoPlaceholder">${open?esc(x.desc):'ここを押すと解説を表示'}</span></button>
+      </article>`;
+    }).join('')}</section>`;
+  }).join('');
+  $('#kanpo').innerHTML=`<div class="kanpoTop card"><div><h2 style="margin:0">🌿 漢方暗記モード</h2><p class="small" style="margin-bottom:0">○ ${st.ok}　× ${st.ng}　未選択 ${st.blank}　/ ${st.total}種類</p></div><div class="kanpoTopBtns"><button id="kanpoSaveTop" class="btn primary">保存</button><button id="kanpoExitTop" class="btn">ホームへ</button></div></div>${cats||'<div class="card"><p>×の漢方はありません。</p></div>'}<div class="card kanpoBottom"><button id="kanpoNgMode" class="btn primary">${kanpoOnlyNg?'×のみを再整列':'×のみモード'}</button>${kanpoOnlyNg?'<button id="kanpoAllMode" class="btn">全件表示</button>':''}<button id="kanpoSaveBottom" class="btn">保存</button><button id="kanpoExitBottom" class="btn">ホームへ</button><div id="kanpoSaveMsg" class="small"></div></div>`;
+  $$('#kanpo .kanpoJudge button').forEach(b=>b.onclick=e=>{
+    const item=e.currentTarget.closest('.kanpoItem'),key=item.dataset.key,state=e.currentTarget.dataset.state;
+    kanpoDraft[key]=state;kanpoDirty=true;
+    item.querySelector('.kanpoOk').classList.toggle('on',state==='ok');
+    item.querySelector('.kanpoNg').classList.toggle('on',state==='ng');
+    const st2=kanpoStats();const p=$('#kanpo .kanpoTop .small');if(p)p.textContent=`○ ${st2.ok}　× ${st2.ng}　未選択 ${st2.blank}　/ ${st2.total}種類`;
+  });
+  $$('#kanpo .kanpoAnswer').forEach(b=>b.onclick=e=>{
+    const btn=e.currentTarget,rid=btn.dataset.reveal,item=btn.closest('.kanpoItem');
+    const catIndex=+rid.match(/^k(\d+)_/)[1],itemIndex=+rid.match(/_(\d+)$/)[1];
+    const desc=KANPO_CATEGORIES[catIndex].items[itemIndex][1];
+    if(kanpoRevealed.has(rid)){kanpoRevealed.delete(rid);btn.classList.remove('open');btn.setAttribute('aria-expanded','false');btn.querySelector('.kanpoPlaceholder').textContent='ここを押すと解説を表示';}
+    else{kanpoRevealed.add(rid);btn.classList.add('open');btn.setAttribute('aria-expanded','true');btn.querySelector('.kanpoPlaceholder').textContent=desc;}
+  });
+  const doSave=()=>saveKanpo();
+  $('#kanpoSaveTop').onclick=doSave;$('#kanpoSaveBottom').onclick=doSave;
+  $('#kanpoExitTop').onclick=requestKanpoExit;$('#kanpoExitBottom').onclick=requestKanpoExit;
+  $('#kanpoNgMode').onclick=()=>{kanpoOnlyNg=true;renderKanpo();window.scrollTo({top:0,behavior:'auto'});};
+  if($('#kanpoAllMode')) $('#kanpoAllMode').onclick=()=>{kanpoOnlyNg=false;renderKanpo();window.scrollTo({top:0,behavior:'auto'});};
+}
+function saveKanpo(){
+  S.kanpoProgress=JSON.parse(JSON.stringify(kanpoDraft||{}));save();kanpoDirty=false;
+  const msg=$('#kanpoSaveMsg');if(msg){msg.textContent='保存しました。';setTimeout(()=>{if($('#kanpoSaveMsg'))$('#kanpoSaveMsg').textContent='';},1800);}
+}
+function ensureKanpoExitModal(){
+  if($('#kanpoExitModal')) return;
+  const d=document.createElement('div');d.id='kanpoExitModal';d.className='modal';
+  d.innerHTML=`<div class="modalbox"><h2>漢方暗記を終了しますか？</h2><p class="small">保存しない場合、今回の○×変更は捨てて最後に保存した状態へ戻ります。</p><div class="exitChoices"><button id="kanpoExitSave" class="btn primary">保存して戻る</button><button id="kanpoExitDiscard" class="btn">保存せず戻る</button><button id="kanpoExitCancel" class="btn">漢方暗記に戻る</button></div></div>`;
+  document.body.appendChild(d);
+  $('#kanpoExitSave').onclick=()=>{saveKanpo();$('#kanpoExitModal').classList.remove('show');kanpoDraft=null;kanpoDirty=false;renderHome();};
+  $('#kanpoExitDiscard').onclick=()=>{$('#kanpoExitModal').classList.remove('show');kanpoDraft=null;kanpoDirty=false;renderHome();};
+  $('#kanpoExitCancel').onclick=()=>$('#kanpoExitModal').classList.remove('show');
+}
+function requestKanpoExit(){
+  if(!kanpoDirty){kanpoDraft=null;renderHome();return;}
+  ensureKanpoExitModal();$('#kanpoExitModal').classList.add('show');
+}
+
 function integrity(){
   const errs=[];if(Q.length!==720)errs.push('問題数');
   if(new Set(Q.map(q=>q.id)).size!==720)errs.push('ID重複');
@@ -488,8 +683,8 @@ window.addEventListener('DOMContentLoaded',()=>{
   const e=integrity();
   if(e.length){document.body.innerHTML='<pre>正答データ検証エラー\n'+e.slice(0,20).join('\n')+'</pre>';return;}
   $('#verifyStatus').textContent='✓ 公式解答PDFから作成：720 / 720問。起動時に正答キーを自動照合。';
-  $('#tabHome').onclick=()=>S.active?requestExit({kind:'home'}):renderHome();
-  $('#tabWeak').onclick=()=>S.active?requestExit({kind:'list',filter:'weak'}):renderList('weak');
+  $('#tabHome').onclick=()=>page==='kanpo'?requestKanpoExit():(S.active?requestExit({kind:'home'}):renderHome());
+  $('#tabWeak').onclick=()=>{if(page==='kanpo'){if(kanpoDirty){alert('漢方暗記の変更を保存または破棄してから一覧へ移動してください。');requestKanpoExit();}else renderList('weak');}else S.active?requestExit({kind:'list',filter:'weak'}):renderList('weak');};
   $('#settings').onclick=()=>$('#modal').classList.add('show');
   $('#close').onclick=()=>$('#modal').classList.remove('show');
   $('#reset').onclick=()=>{if(confirm('全記録を消しますか？')){S=blank();save();renderHome();$('#modal').classList.remove('show');}};
