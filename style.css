@@ -66,3 +66,8 @@
 .kanpoAnswer.open{border-style:solid;background:#fafbfc;color:#17191c}.kanpoPlaceholder{white-space:pre-wrap}
 .kanpoBottom{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.kanpoBottom #kanpoSaveMsg{flex-basis:100%;color:#16884a;font-weight:700}
 @media(max-width:520px){.kanpoTop{align-items:flex-start;flex-direction:column}.kanpoTopBtns{width:100%}.kanpoTopBtns .btn{flex:1}.kanpoName{font-size:15px}.kanpoJudge button{width:40px;height:36px}.kanpoAnswer{min-height:54px;padding:11px}.kanpoBottom .btn{flex:1;min-width:44%}}
+.kanpoModeChoices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+.kanpoRandomCard{border-color:#c8c4eb;background:#faf9ff}
+.kanpoRandomList{margin-top:14px}
+.kanpoRandomList>h2{display:none}
+@media(max-width:620px){.kanpoModeChoices{grid-template-columns:1fr}}

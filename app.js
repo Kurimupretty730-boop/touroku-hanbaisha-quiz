@@ -121,6 +121,8 @@ const KANPO_CATEGORIES = [
 let kanpoDraft=null;
 let kanpoDirty=false;
 let kanpoOnlyNg=false;
+let kanpoRandom=false;
+let kanpoRandomItems=[];
 let kanpoRevealed=new Set();
 function kanpoKey(label){ return label.replace(/（.*$/,'').trim(); }
 let S = load();
@@ -593,11 +595,30 @@ function renderList(initialFilter='all',initialChapter='all'){
   $('#lf').onchange=draw;$('#lc').onchange=draw;draw();
 }
 
+function allKanpoEntries(){
+  return KANPO_CATEGORIES.flatMap((cat,ci)=>cat.items.map((item,ii)=>({
+    label:item[0],desc:item[1],key:kanpoKey(item[0]),rid:`k${ci}_${ii}`,cat:cat.name,ci,ii
+  })));
+}
+function shuffledKanpo(entries){
+  const a=[...entries];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+function resetKanpoReveal(){ kanpoRevealed=new Set(); }
 function startKanpo(){
   if(!S.kanpoProgress || typeof S.kanpoProgress!=='object') S.kanpoProgress={};
   kanpoDraft=JSON.parse(JSON.stringify(S.kanpoProgress));
-  kanpoDirty=false;kanpoOnlyNg=false;kanpoRevealed=new Set();
-  renderKanpo();
+  kanpoDirty=false;kanpoOnlyNg=false;kanpoRandom=false;kanpoRandomItems=[];resetKanpoReveal();
+  renderKanpoModeSelect();
+}
+function renderKanpoModeSelect(){
+  setPage('kanpo');renderStats();$('#scope').textContent='漢方暗記';
+  const st=kanpoStats();
+  $('#kanpo').innerHTML=`<div class="card"><h2>🌿 漢方暗記モード</h2><p class="small">○ ${st.ok}　× ${st.ng}　未選択 ${st.blank}　/ ${st.total}種類</p><p>表示方法を選んでください。</p><div class="kanpoModeChoices"><button id="kanpoCategoryStart" class="modecard"><h3>カテゴリ順</h3><p>かぜ・胃・鼻など、カテゴリ別に一覧表示します。</p></button><button id="kanpoRandomStart" class="modecard kanpoRandomCard"><h3>🔀 完全ランダム</h3><p>カテゴリ名を表示せず、漢方を完全にランダムな順番で並べます。</p></button></div><div style="margin-top:12px"><button id="kanpoSelectExit" class="btn">ホームへ</button></div></div>`;
+  $('#kanpoCategoryStart').onclick=()=>{kanpoRandom=false;kanpoOnlyNg=false;resetKanpoReveal();renderKanpo();};
+  $('#kanpoRandomStart').onclick=()=>{kanpoRandom=true;kanpoOnlyNg=false;resetKanpoReveal();kanpoRandomItems=shuffledKanpo(allKanpoEntries());renderKanpo();};
+  $('#kanpoSelectExit').onclick=requestKanpoExit;
 }
 function kanpoStats(){
   const keys=[...new Set(KANPO_CATEGORIES.flatMap(c=>c.items.map(x=>kanpoKey(x[0]))))];
@@ -605,23 +626,33 @@ function kanpoStats(){
   keys.forEach(k=>{if(kanpoDraft?.[k]==='ok')ok++;else if(kanpoDraft?.[k]==='ng')ng++;});
   return {total:keys.length,ok,ng,blank:keys.length-ok-ng};
 }
+function kanpoItemHtml(x){
+  const state=kanpoDraft?.[x.key]||'';
+  const open=kanpoRevealed.has(x.rid);
+  return `<article class="kanpoItem" data-key="${esc(x.key)}" data-rid="${x.rid}">
+    <div class="kanpoHead"><div class="kanpoName">${esc(x.label)}</div><div class="kanpoJudge"><button class="kanpoOk ${state==='ok'?'on':''}" data-state="ok">○</button><button class="kanpoNg ${state==='ng'?'on':''}" data-state="ng">×</button></div></div>
+    <button class="kanpoAnswer ${open?'open':''}" data-reveal="${x.rid}" aria-expanded="${open?'true':'false'}"><span class="kanpoPlaceholder">${open?esc(x.desc):'ここを押すと解説を表示'}</span></button>
+  </article>`;
+}
 function renderKanpo(){
-  setPage('kanpo');renderStats();$('#scope').textContent=kanpoOnlyNg?'漢方 ×のみ':'漢方暗記';
+  setPage('kanpo');renderStats();
+  const modeLabel=kanpoRandom?'ランダム':'カテゴリ順';
+  $('#scope').textContent=`漢方 ${kanpoOnlyNg?'×のみ / ':''}${modeLabel}`;
   const st=kanpoStats();
-  const cats=KANPO_CATEGORIES.map((cat,ci)=>{
-    const items=cat.items.map((item,ii)=>({label:item[0],desc:item[1],key:kanpoKey(item[0]),rid:`k${ci}_${ii}`}))
-      .filter(x=>!kanpoOnlyNg||kanpoDraft?.[x.key]==='ng');
-    if(!items.length) return '';
-    return `<section class="kanpoCategory"><h2>${esc(cat.name)}</h2>${items.map(x=>{
-      const state=kanpoDraft?.[x.key]||'';
-      const open=kanpoRevealed.has(x.rid);
-      return `<article class="kanpoItem" data-key="${esc(x.key)}" data-rid="${x.rid}">
-        <div class="kanpoHead"><div class="kanpoName">${esc(x.label)}</div><div class="kanpoJudge"><button class="kanpoOk ${state==='ok'?'on':''}" data-state="ok">○</button><button class="kanpoNg ${state==='ng'?'on':''}" data-state="ng">×</button></div></div>
-        <button class="kanpoAnswer ${open?'open':''}" data-reveal="${x.rid}" aria-expanded="${open?'true':'false'}"><span class="kanpoPlaceholder">${open?esc(x.desc):'ここを押すと解説を表示'}</span></button>
-      </article>`;
-    }).join('')}</section>`;
-  }).join('');
-  $('#kanpo').innerHTML=`<div class="kanpoTop card"><div><h2 style="margin:0">🌿 漢方暗記モード</h2><p class="small" style="margin-bottom:0">○ ${st.ok}　× ${st.ng}　未選択 ${st.blank}　/ ${st.total}種類</p></div><div class="kanpoTopBtns"><button id="kanpoSaveTop" class="btn primary">保存</button><button id="kanpoExitTop" class="btn">ホームへ</button></div></div>${cats||'<div class="card"><p>×の漢方はありません。</p></div>'}<div class="card kanpoBottom"><button id="kanpoNgMode" class="btn primary">${kanpoOnlyNg?'×のみを再整列':'×のみモード'}</button>${kanpoOnlyNg?'<button id="kanpoAllMode" class="btn">全件表示</button>':''}<button id="kanpoSaveBottom" class="btn">保存</button><button id="kanpoExitBottom" class="btn">ホームへ</button><div id="kanpoSaveMsg" class="small"></div></div>`;
+  let body='';
+  if(kanpoRandom){
+    let items=kanpoRandomItems.length?kanpoRandomItems:shuffledKanpo(allKanpoEntries());
+    if(kanpoOnlyNg) items=items.filter(x=>kanpoDraft?.[x.key]==='ng');
+    body=items.length?`<section class="kanpoCategory kanpoRandomList">${items.map(kanpoItemHtml).join('')}</section>`:'<div class="card"><p>×の漢方はありません。</p></div>';
+  }else{
+    body=KANPO_CATEGORIES.map((cat,ci)=>{
+      const items=cat.items.map((item,ii)=>({label:item[0],desc:item[1],key:kanpoKey(item[0]),rid:`k${ci}_${ii}`,cat:cat.name,ci,ii}))
+        .filter(x=>!kanpoOnlyNg||kanpoDraft?.[x.key]==='ng');
+      if(!items.length) return '';
+      return `<section class="kanpoCategory"><h2>${esc(cat.name)}</h2>${items.map(kanpoItemHtml).join('')}</section>`;
+    }).join('') || '<div class="card"><p>×の漢方はありません。</p></div>';
+  }
+  $('#kanpo').innerHTML=`<div class="kanpoTop card"><div><h2 style="margin:0">🌿 漢方暗記モード</h2><p class="small" style="margin-bottom:0">○ ${st.ok}　× ${st.ng}　未選択 ${st.blank}　/ ${st.total}種類</p><p class="small" style="margin:4px 0 0">表示：${kanpoOnlyNg?'×のみ・':''}${modeLabel}</p></div><div class="kanpoTopBtns"><button id="kanpoCategoryMode" class="btn ${!kanpoRandom?'primary':''}">カテゴリ順</button><button id="kanpoRandomMode" class="btn ${kanpoRandom?'primary':''}">🔀 ランダム</button><button id="kanpoSaveTop" class="btn">保存</button><button id="kanpoExitTop" class="btn">ホームへ</button></div></div>${body}<div class="card kanpoBottom"><button id="kanpoNgMode" class="btn primary">${kanpoOnlyNg?'×のみを再整列':'×のみモード'}</button>${kanpoOnlyNg?'<button id="kanpoAllMode" class="btn">全件表示</button>':''}${kanpoRandom?'<button id="kanpoReshuffle" class="btn">🔀 再シャッフル</button>':''}<button id="kanpoSaveBottom" class="btn">保存</button><button id="kanpoExitBottom" class="btn">ホームへ</button><div id="kanpoSaveMsg" class="small"></div></div>`;
   $$('#kanpo .kanpoJudge button').forEach(b=>b.onclick=e=>{
     const item=e.currentTarget.closest('.kanpoItem'),key=item.dataset.key,state=e.currentTarget.dataset.state;
     kanpoDraft[key]=state;kanpoDirty=true;
@@ -630,17 +661,20 @@ function renderKanpo(){
     const st2=kanpoStats();const p=$('#kanpo .kanpoTop .small');if(p)p.textContent=`○ ${st2.ok}　× ${st2.ng}　未選択 ${st2.blank}　/ ${st2.total}種類`;
   });
   $$('#kanpo .kanpoAnswer').forEach(b=>b.onclick=e=>{
-    const btn=e.currentTarget,rid=btn.dataset.reveal,item=btn.closest('.kanpoItem');
-    const catIndex=+rid.match(/^k(\d+)_/)[1],itemIndex=+rid.match(/_(\d+)$/)[1];
-    const desc=KANPO_CATEGORIES[catIndex].items[itemIndex][1];
+    const btn=e.currentTarget,rid=btn.dataset.reveal;
+    const m=rid.match(/^k(\d+)_(\d+)$/); if(!m)return;
+    const desc=KANPO_CATEGORIES[+m[1]].items[+m[2]][1];
     if(kanpoRevealed.has(rid)){kanpoRevealed.delete(rid);btn.classList.remove('open');btn.setAttribute('aria-expanded','false');btn.querySelector('.kanpoPlaceholder').textContent='ここを押すと解説を表示';}
     else{kanpoRevealed.add(rid);btn.classList.add('open');btn.setAttribute('aria-expanded','true');btn.querySelector('.kanpoPlaceholder').textContent=desc;}
   });
   const doSave=()=>saveKanpo();
   $('#kanpoSaveTop').onclick=doSave;$('#kanpoSaveBottom').onclick=doSave;
   $('#kanpoExitTop').onclick=requestKanpoExit;$('#kanpoExitBottom').onclick=requestKanpoExit;
-  $('#kanpoNgMode').onclick=()=>{kanpoOnlyNg=true;renderKanpo();window.scrollTo({top:0,behavior:'auto'});};
-  if($('#kanpoAllMode')) $('#kanpoAllMode').onclick=()=>{kanpoOnlyNg=false;renderKanpo();window.scrollTo({top:0,behavior:'auto'});};
+  $('#kanpoCategoryMode').onclick=()=>{kanpoRandom=false;kanpoOnlyNg=false;resetKanpoReveal();renderKanpo();window.scrollTo({top:0,behavior:'auto'});};
+  $('#kanpoRandomMode').onclick=()=>{kanpoRandom=true;kanpoOnlyNg=false;resetKanpoReveal();kanpoRandomItems=shuffledKanpo(allKanpoEntries());renderKanpo();window.scrollTo({top:0,behavior:'auto'});};
+  $('#kanpoNgMode').onclick=()=>{kanpoOnlyNg=true;resetKanpoReveal();if(kanpoRandom)kanpoRandomItems=shuffledKanpo(allKanpoEntries().filter(x=>kanpoDraft?.[x.key]==='ng'));renderKanpo();window.scrollTo({top:0,behavior:'auto'});};
+  if($('#kanpoAllMode')) $('#kanpoAllMode').onclick=()=>{kanpoOnlyNg=false;resetKanpoReveal();if(kanpoRandom)kanpoRandomItems=shuffledKanpo(allKanpoEntries());renderKanpo();window.scrollTo({top:0,behavior:'auto'});};
+  if($('#kanpoReshuffle')) $('#kanpoReshuffle').onclick=()=>{resetKanpoReveal();kanpoRandomItems=shuffledKanpo(allKanpoEntries().filter(x=>!kanpoOnlyNg||kanpoDraft?.[x.key]==='ng'));renderKanpo();window.scrollTo({top:0,behavior:'auto'});};
 }
 function saveKanpo(){
   S.kanpoProgress=JSON.parse(JSON.stringify(kanpoDraft||{}));save();kanpoDirty=false;
