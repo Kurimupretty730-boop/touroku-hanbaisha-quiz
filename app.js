@@ -118,6 +118,82 @@ const KANPO_CATEGORIES = [
     ['清上防風湯（せいじょうぼうふうとう）','赤鼻（酒さ）、にきび（体力中等度以上）']
   ]}
 ];
+
+
+const SHOYAKU_CATEGORIES = [
+  {name:'強心薬', importance:'最重要', stars:'★★★★★', items:[
+    ['センソ（蟾酥）','ヒキガエル科のシナヒキガエル等の毒腺の分泌物','微量で強い強心作用があり、1日容量5mgを超えると劇薬'],
+    ['ジャコウ（麝香）','シカ科のジャコウジカの雄の麝香腺分泌物','強心作用、呼吸中枢を刺激して呼吸機能を高めたり意識をはっきりさせる。小児の疳にも'],
+    ['ゴオウ（牛黄）','ウシ科のウシの胆嚢中に生じた結石','強心作用、末梢血管拡張による血圧低下、興奮を鎮める。小児の疳にも'],
+    ['ロクジョウ（鹿茸）','シカ科のマンシュウアカジカ又はマンシュウジカの雄のまだ角化していない、又はわずかに角化した幼角','強心作用、強壮、血行促進'],
+    ['シンジュ','ウグイスガイ科のアコヤガイ、シンジュガイ又はクロチョウガイ等の外套膜組成中に病的に形成された顆粒状物質','鎮静作用'],
+    ['リュウノウ','フタバガキ科リュウノウジュの樹幹に析出する精油の結晶','中枢神経系の刺激作用による気つけの効果']
+  ]},
+  {name:'漢方処方製剤の構成生薬', importance:'重要', stars:'★★★★', items:[
+    ['カンゾウ','マメ科のGlycyrrhiza uralensis Fischer又はGlycyrrhiza glabra Linnéの根及びストロンで、ときには周皮を除いたもの（皮去りカンゾウ）','グリチルリチン酸による抗炎症作用、気道粘膜の分泌促進作用、健胃作用。\n1日最大服用量がカンゾウとして1g以上となる製品は長期連用を避ける'],
+    ['マオウ','マオウ科のEphedra sinica Stapf、Ephedra intermedia Schrenk et C. A. Meyer又はEphedra equisetina Bungeの地上茎','気管支拡張、発汗促進、尿量増加（利尿）。\nエフェドリンの依存性あり、交感神経系への刺激作用'],
+    ['ダイオウ','タデ科のRheum palmatum Linné、Rheum tanguticum Maximowicz、Rheum officinale Baillon、Rheum coreanum Nakai又はそれらの種間雑種の、通例、根茎','センノシドを含む大腸刺激性瀉下作用。\n授乳×（乳児に下痢）']
+  ]},
+  {name:'代表的な生薬8つ', importance:'重要', stars:'★★★★', items:[
+    ['ブシ','キンポウゲ科のハナトリカブト又はオクトリカブトの塊根','血液循環改善'],
+    ['カッコン','マメ科のクズの周皮を除いた根','解熱、鎮痙'],
+    ['サイコ','セリ科のミシマサイコの根','抗炎症、鎮痛、解熱'],
+    ['ボウフウ','セリ科のSaposhnikovia divaricata Schischkinの根及び根茎','発汗、解熱、鎮痛、鎮痙'],
+    ['ショウマ','キンポウゲ科のCimicifuga dahurica Maximowicz、Cimicifuga heracleifolia Komarov、Cimicifuga foetida Linné又はサラシナショウマの根茎','発汗、解熱、解毒、消炎'],
+    ['ブクリョウ','サルノコシカケ科のマツホドの菌核で外層をほとんど除いたもの','利尿、健胃、鎮静'],
+    ['レンギョウ','モクセイ科のレンギョウの果実','鎮痛、抗菌'],
+    ['サンザシ','バラ科のサンザシ又はオオミサンザシの偽果をそのまま、又は縦切若しくは横切したもの','健胃、消化促進']
+  ]},
+  {name:'小児鎮静薬', importance:'重要', stars:'★★★★', items:[
+    ['レイヨウカク','ウシ科のサイカレイヨウ等の角','緊張興奮を鎮める'],
+    ['ジンコウ','ジンチョウゲ科のジンコウ、その他の同属植物の材、特にその辺材の材質中に黒色の樹脂が沈着した部分を採取したもの','鎮静、健胃、強壮']
+  ]},
+  {name:'婦人薬', importance:'重要', stars:'★★★★', items:[
+    ['ボタンピ','ボタン科のボタンの根皮','鎮痛・鎮静・鎮痙作用、内臓の痛みを取る'],
+    ['サフラン','あやめ科のサフラン','鎮痛、鎮静作用、月経を促す作用'],
+    ['コウブシ','カヤツリグサ科のハマスゲの根茎','鎮静、鎮痛作用、月経を促す作用'],
+    ['センキュウ','セリ科のセンキュウの根茎を、通例、湯通ししたもの','血行を改善し、血色不良や冷えの症状を緩和、強壮、鎮静、鎮痛等の作用'],
+    ['トウキ','セリ科のトウキ又はホッカイトウキの根を、通例、湯通ししたもの','血行を改善し、血色不良や冷えの症状を緩和、強壮、鎮静、鎮痛などの作用'],
+    ['ジオウ','ゴマノハグサ科のアカヤジオウなどの根またはそれを蒸したもの','血行を改善し、血色不良や冷えの症状を緩和、強壮、鎮静、鎮痛等の作用']
+  ]},
+  {name:'泌尿器の薬', importance:'中', stars:'★★★', items:[
+    ['ウワウルシ','ツツジ科のクマコケモモの葉','利尿作用、尿路消毒成分']
+  ]},
+  {name:'胃腸薬', importance:'中', stars:'★★★', items:[
+    ['オウバク','ミカン科のキハダ又はPhellodendron chinense Schneiderの周皮を除いた樹皮','苦みによる健胃'],
+    ['オウレン','キンポウゲ科のオウレン、Coptis chinensis Franchet、Coptis deltoidea C. Y. Cheng et Hsiao又はCoptis teeta Wallichの根をほとんど除いた根茎','苦みによる健胃'],
+    ['センブリ','リンドウ科のセンブリの開花期の全草','苦みによる健胃'],
+    ['ケイヒ','クスノキ科のCinnamomum cassia J. Preslの樹皮又は周皮の一部を除いた樹皮','香りによる健胃'],
+    ['センナ、センノシド','マメ科のCassia angustifolia Vahl又はCassia acutifolia Delileの小葉','大腸刺激瀉下作用。センノシドはセンナから抽出'],
+    ['シャクヤク','ボタン科のシャクヤクの根','鎮痛・鎮痙作用'],
+    ['ケツメイシ','マメ科のエビスグサ又はCassia tora Linnéの種子','整腸'],
+    ['ゲンノショウコ','フウロソウ科のゲンノショウコの地上部','整腸']
+  ]},
+  {name:'鎮咳去痰薬', importance:'中', stars:'★★★', items:[
+    ['キョウニン','バラ科のホンアンズ、アンズ等の種子','呼吸中枢、咳嗽中枢を鎮静'],
+    ['ナンテンジツ','メギ科のシロミナンテン（シロナンテン）またはナンテンの果実','知覚神経・末梢運動神経に作用（咳止め）'],
+    ['ゴミシ','マツブサ科のチョウセンゴミシの果実','鎮咳'],
+    ['シャゼンソウ','オオバコ科のオオバコの花期の全草','去痰'],
+    ['セキサン','ヒガンバナ科のヒガンバナ鱗茎','去痰'],
+    ['バクモンドウ','ユリ科のジャノヒゲの根の膨大部','鎮咳、去痰、滋養強壮']
+  ]},
+  {name:'解熱鎮痛薬', importance:'中', stars:'★★★', items:[
+    ['ジリュウ','フトミミズ科のPheretima aspergillum Perrier又はその近縁動物','熱さまし、解熱']
+  ]},
+  {name:'歯や口の中に使う生薬', importance:'低', stars:'★★', items:[
+    ['カミツレ','キク科のカミツレの頭花','抗炎症、抗菌、発汗'],
+    ['ラタニア','クラメリア科のクラメリア・トリアンドラ及びその同属植物の根','収斂作用'],
+    ['ミルラ','カンラン科のミルラノキなどの植物の外部の傷口から流出して凝固した樹脂','収斂作用、抗菌作用']
+  ]}
+];
+let shoyakuDraft=null;
+let shoyakuDirty=false;
+let shoyakuOnlyNg=false;
+let shoyakuRandom=false;
+let shoyakuRandomItems=[];
+let shoyakuRevealed=new Set();
+function shoyakuKey(label){return label.trim();}
+
 let kanpoDraft=null;
 let kanpoDirty=false;
 let kanpoOnlyNg=false;
@@ -134,7 +210,7 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 
 function blank(){
-  return {progress:{}, modeSessions:{}, savedSessions:[], active:null, kanpoProgress:{}};
+  return {progress:{}, modeSessions:{}, savedSessions:[], active:null, kanpoProgress:{}, shoyakuProgress:{}};
 }
 function load(){
   try{return Object.assign(blank(), JSON.parse(localStorage.getItem(K)||'{}'));}
@@ -173,7 +249,7 @@ function renderStats(){
 function chapterName(ch){ return ['','第1章','第2章','第3章','第4章','第5章'][ch]; }
 function setPage(p){
   page=p;
-  ['home','quiz','listPage','kanpo'].forEach(x=>$('#'+x).classList.add('hidden'));
+  ['home','quiz','listPage','kanpo','shoyaku'].forEach(x=>$('#'+x).classList.add('hidden'));
   $('#'+p).classList.remove('hidden');
   $('#tabHome').classList.toggle('active',p==='home');
   $('#tabWeak').classList.toggle('active',p==='listPage');
@@ -193,6 +269,7 @@ function renderHome(){
         <button class="modecard" id="parallel"><h3>平行モード</h3><p>同じ章内の同じ問題番号を、令和元〜6年で6問連続して比較します。</p></button>
         <button class="modecard" id="test"><h3>テストモード</h3><p>1年度120問を本番順に解答し、章別正答率と合格基準を表示します。</p></button>
         <button class="modecard kanpoModeCard" id="kanpoMode"><h3>🌿 漢方暗記モード</h3><p>漢方を一覧で確認。解説をタップで表示し、○・×を自分で付けて反復できます。</p></button>
+        <button class="modecard shoyakuModeCard" id="shoyakuMode"><h3>🌱 生薬暗記モード</h3><p>生薬を一覧で確認。起源と作用を別々に開き、○・×で反復できます。</p></button>
       </div>
     </div>
     <div class="card"><h3 style="margin-top:0">保存した学習</h3><div id="saved"></div></div>`;
@@ -200,6 +277,7 @@ function renderHome(){
   $('#parallel').onclick=chooseParallel;
   $('#test').onclick=chooseTest;
   $('#kanpoMode').onclick=startKanpo;
+  $('#shoyakuMode').onclick=startShoyaku;
   renderSaved();
 }
 
@@ -702,6 +780,79 @@ function requestKanpoExit(){
   ensureKanpoExitModal();$('#kanpoExitModal').classList.add('show');
 }
 
+
+function allShoyakuEntries(){
+  return SHOYAKU_CATEGORIES.flatMap((cat,ci)=>cat.items.map((item,ii)=>({
+    label:item[0],origin:item[1],action:item[2],key:shoyakuKey(item[0]),rid:`s${ci}_${ii}`,cat:cat.name,importance:cat.importance,stars:cat.stars,ci,ii
+  })));
+}
+function shuffledShoyaku(a){const x=[...a];for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]];}return x;}
+function resetShoyakuReveal(){shoyakuRevealed=new Set();}
+function startShoyaku(){
+  if(!S.shoyakuProgress||typeof S.shoyakuProgress!=='object')S.shoyakuProgress={};
+  shoyakuDraft=JSON.parse(JSON.stringify(S.shoyakuProgress));
+  shoyakuDirty=false;shoyakuOnlyNg=false;shoyakuRandom=false;shoyakuRandomItems=[];resetShoyakuReveal();
+  renderShoyakuModeSelect();
+}
+function renderShoyakuModeSelect(){
+  setPage('shoyaku');renderStats();$('#scope').textContent='生薬暗記';
+  const st=shoyakuStats();
+  $('#shoyaku').innerHTML=`<div class="card"><h2>🌱 生薬暗記モード</h2><p class="small">○ ${st.ok}　× ${st.ng}　未選択 ${st.blank}　/ ${st.total}種類</p><p>表示方法を選んでください。</p><div class="kanpoModeChoices"><button id="shoyakuCategoryStart" class="modecard"><h3>カテゴリ順</h3><p>カテゴリと重要度ごとに一覧表示します。</p></button><button id="shoyakuRandomStart" class="modecard kanpoRandomCard"><h3>🔀 完全ランダム</h3><p>カテゴリ名を隠して完全ランダム。名前の後ろに重要度の★だけ表示します。</p></button></div><div style="margin-top:12px"><button id="shoyakuSelectExit" class="btn">ホームへ</button></div></div>`;
+  $('#shoyakuCategoryStart').onclick=()=>{shoyakuRandom=false;shoyakuOnlyNg=false;resetShoyakuReveal();renderShoyaku();};
+  $('#shoyakuRandomStart').onclick=()=>{shoyakuRandom=true;shoyakuOnlyNg=false;resetShoyakuReveal();shoyakuRandomItems=shuffledShoyaku(allShoyakuEntries());renderShoyaku();};
+  $('#shoyakuSelectExit').onclick=requestShoyakuExit;
+}
+function shoyakuStats(){
+  const keys=[...new Set(SHOYAKU_CATEGORIES.flatMap(c=>c.items.map(x=>shoyakuKey(x[0]))))];let ok=0,ng=0;
+  keys.forEach(k=>{if(shoyakuDraft?.[k]==='ok')ok++;else if(shoyakuDraft?.[k]==='ng')ng++;});
+  return {total:keys.length,ok,ng,blank:keys.length-ok-ng};
+}
+function shoyakuItemHtml(x){
+  const state=shoyakuDraft?.[x.key]||'';
+  const originOpen=shoyakuRevealed.has(x.rid+':origin'), actionOpen=shoyakuRevealed.has(x.rid+':action');
+  const displayName=shoyakuRandom?`${x.label}　${x.stars}`:x.label;
+  return `<article class="kanpoItem shoyakuItem" data-key="${esc(x.key)}" data-rid="${x.rid}">
+    <div class="kanpoHead"><div class="kanpoName">${esc(displayName)}</div><div class="kanpoJudge"><button class="kanpoOk ${state==='ok'?'on':''}" data-state="ok">○</button><button class="kanpoNg ${state==='ng'?'on':''}" data-state="ng">×</button></div></div>
+    <div class="shoyakuAnswers">
+      <button class="kanpoAnswer shoyakuAnswer ${originOpen?'open':''}" data-kind="origin" data-reveal="${x.rid}" aria-expanded="${originOpen?'true':'false'}"><b class="shoyakuLabel">起源</b><span class="kanpoPlaceholder">${originOpen?esc(x.origin):'ここを押すと起源を表示'}</span></button>
+      <button class="kanpoAnswer shoyakuAnswer ${actionOpen?'open':''}" data-kind="action" data-reveal="${x.rid}" aria-expanded="${actionOpen?'true':'false'}"><b class="shoyakuLabel">作用</b><span class="kanpoPlaceholder">${actionOpen?esc(x.action):'ここを押すと作用を表示'}</span></button>
+    </div>
+  </article>`;
+}
+function renderShoyaku(){
+  setPage('shoyaku');renderStats();const modeLabel=shoyakuRandom?'ランダム':'カテゴリ順';$('#scope').textContent=`生薬 ${shoyakuOnlyNg?'×のみ / ':''}${modeLabel}`;
+  const st=shoyakuStats();let body='';
+  if(shoyakuRandom){
+    let items=shoyakuRandomItems.length?shoyakuRandomItems:shuffledShoyaku(allShoyakuEntries());
+    if(shoyakuOnlyNg)items=items.filter(x=>shoyakuDraft?.[x.key]==='ng');
+    body=items.length?`<section class="kanpoCategory kanpoRandomList">${items.map(shoyakuItemHtml).join('')}</section>`:'<div class="card"><p>×の生薬はありません。</p></div>';
+  }else{
+    body=SHOYAKU_CATEGORIES.map((cat,ci)=>{
+      const items=cat.items.map((item,ii)=>({label:item[0],origin:item[1],action:item[2],key:shoyakuKey(item[0]),rid:`s${ci}_${ii}`,cat:cat.name,importance:cat.importance,stars:cat.stars,ci,ii})).filter(x=>!shoyakuOnlyNg||shoyakuDraft?.[x.key]==='ng');
+      if(!items.length)return '';
+      return `<section class="kanpoCategory shoyakuCategory"><h2>${esc(cat.name)} <span class="importanceText">${esc(cat.importance)}　${esc(cat.stars)}</span></h2>${items.map(shoyakuItemHtml).join('')}</section>`;
+    }).join('')||'<div class="card"><p>×の生薬はありません。</p></div>';
+  }
+  $('#shoyaku').innerHTML=`<div class="kanpoTop card"><div><h2 style="margin:0">🌱 生薬暗記モード</h2><p class="small" style="margin-bottom:0">○ ${st.ok}　× ${st.ng}　未選択 ${st.blank}　/ ${st.total}種類</p><p class="small" style="margin:4px 0 0">表示：${shoyakuOnlyNg?'×のみ・':''}${modeLabel}</p></div><div class="kanpoTopBtns"><button id="shoyakuCategoryMode" class="btn ${!shoyakuRandom?'primary':''}">カテゴリ順</button><button id="shoyakuRandomMode" class="btn ${shoyakuRandom?'primary':''}">🔀 ランダム</button><button id="shoyakuSaveTop" class="btn">保存</button><button id="shoyakuExitTop" class="btn">ホームへ</button></div></div>${body}<div class="card kanpoBottom"><button id="shoyakuNgMode" class="btn primary">${shoyakuOnlyNg?'×のみを再整列':'×のみモード'}</button>${shoyakuOnlyNg?'<button id="shoyakuAllMode" class="btn">全件表示</button>':''}${shoyakuRandom?'<button id="shoyakuReshuffle" class="btn">🔀 再シャッフル</button>':''}<button id="shoyakuSaveBottom" class="btn">保存</button><button id="shoyakuExitBottom" class="btn">ホームへ</button><div id="shoyakuSaveMsg" class="small"></div></div>`;
+  $$('#shoyaku .kanpoJudge button').forEach(b=>b.onclick=e=>{const item=e.currentTarget.closest('.shoyakuItem'),key=item.dataset.key,state=e.currentTarget.dataset.state;shoyakuDraft[key]=state;shoyakuDirty=true;item.querySelector('.kanpoOk').classList.toggle('on',state==='ok');item.querySelector('.kanpoNg').classList.toggle('on',state==='ng');const st2=shoyakuStats();const p=$('#shoyaku .kanpoTop .small');if(p)p.textContent=`○ ${st2.ok}　× ${st2.ng}　未選択 ${st2.blank}　/ ${st2.total}種類`;});
+  $$('#shoyaku .shoyakuAnswer').forEach(b=>b.onclick=e=>{const btn=e.currentTarget,rid=btn.dataset.reveal,kind=btn.dataset.kind,key=rid+':'+kind;const m=rid.match(/^s(\d+)_(\d+)$/);if(!m)return;const item=SHOYAKU_CATEGORIES[+m[1]].items[+m[2]],txt=kind==='origin'?item[1]:item[2];if(shoyakuRevealed.has(key)){shoyakuRevealed.delete(key);btn.classList.remove('open');btn.setAttribute('aria-expanded','false');btn.querySelector('.kanpoPlaceholder').textContent=kind==='origin'?'ここを押すと起源を表示':'ここを押すと作用を表示';}else{shoyakuRevealed.add(key);btn.classList.add('open');btn.setAttribute('aria-expanded','true');btn.querySelector('.kanpoPlaceholder').textContent=txt;}});
+  $('#shoyakuSaveTop').onclick=saveShoyaku;$('#shoyakuSaveBottom').onclick=saveShoyaku;$('#shoyakuExitTop').onclick=requestShoyakuExit;$('#shoyakuExitBottom').onclick=requestShoyakuExit;
+  $('#shoyakuCategoryMode').onclick=()=>{shoyakuRandom=false;shoyakuOnlyNg=false;resetShoyakuReveal();renderShoyaku();window.scrollTo({top:0,behavior:'auto'});};
+  $('#shoyakuRandomMode').onclick=()=>{shoyakuRandom=true;shoyakuOnlyNg=false;resetShoyakuReveal();shoyakuRandomItems=shuffledShoyaku(allShoyakuEntries());renderShoyaku();window.scrollTo({top:0,behavior:'auto'});};
+  $('#shoyakuNgMode').onclick=()=>{shoyakuOnlyNg=true;resetShoyakuReveal();if(shoyakuRandom)shoyakuRandomItems=shuffledShoyaku(allShoyakuEntries().filter(x=>shoyakuDraft?.[x.key]==='ng'));renderShoyaku();window.scrollTo({top:0,behavior:'auto'});};
+  if($('#shoyakuAllMode'))$('#shoyakuAllMode').onclick=()=>{shoyakuOnlyNg=false;resetShoyakuReveal();if(shoyakuRandom)shoyakuRandomItems=shuffledShoyaku(allShoyakuEntries());renderShoyaku();window.scrollTo({top:0,behavior:'auto'});};
+  if($('#shoyakuReshuffle'))$('#shoyakuReshuffle').onclick=()=>{resetShoyakuReveal();shoyakuRandomItems=shuffledShoyaku(allShoyakuEntries().filter(x=>!shoyakuOnlyNg||shoyakuDraft?.[x.key]==='ng'));renderShoyaku();window.scrollTo({top:0,behavior:'auto'});};
+}
+function saveShoyaku(){S.shoyakuProgress=JSON.parse(JSON.stringify(shoyakuDraft||{}));save();shoyakuDirty=false;const msg=$('#shoyakuSaveMsg');if(msg){msg.textContent='保存しました。';setTimeout(()=>{if($('#shoyakuSaveMsg'))$('#shoyakuSaveMsg').textContent='';},1800);}}
+function ensureShoyakuExitModal(){
+  if($('#shoyakuExitModal'))return;const d=document.createElement('div');d.id='shoyakuExitModal';d.className='modal';
+  d.innerHTML=`<div class="modalbox"><h2>生薬暗記を終了しますか？</h2><p class="small">保存しない場合、今回の○×変更は捨てて最後に保存した状態へ戻ります。</p><div class="exitChoices"><button id="shoyakuExitSave" class="btn primary">保存して戻る</button><button id="shoyakuExitDiscard" class="btn">保存せず戻る</button><button id="shoyakuExitCancel" class="btn">生薬暗記に戻る</button></div></div>`;document.body.appendChild(d);
+  $('#shoyakuExitSave').onclick=()=>{saveShoyaku();$('#shoyakuExitModal').classList.remove('show');shoyakuDraft=null;shoyakuDirty=false;renderHome();};
+  $('#shoyakuExitDiscard').onclick=()=>{$('#shoyakuExitModal').classList.remove('show');shoyakuDraft=null;shoyakuDirty=false;renderHome();};
+  $('#shoyakuExitCancel').onclick=()=>$('#shoyakuExitModal').classList.remove('show');
+}
+function requestShoyakuExit(){if(!shoyakuDirty){shoyakuDraft=null;renderHome();return;}ensureShoyakuExitModal();$('#shoyakuExitModal').classList.add('show');}
+
 function integrity(){
   const errs=[];if(Q.length!==720)errs.push('問題数');
   if(new Set(Q.map(q=>q.id)).size!==720)errs.push('ID重複');
@@ -718,6 +869,8 @@ function importData(f){
 }
 function statDestination(filter){
   const dest={kind:'list',filter};
+  if(page==='kanpo'){ if(kanpoDirty){requestKanpoExit();} else goDestination(dest); return; }
+  if(page==='shoyaku'){ if(shoyakuDirty){requestShoyakuExit();} else goDestination(dest); return; }
   if(S.active) requestExit(dest); else goDestination(dest);
 }
 
@@ -725,8 +878,8 @@ window.addEventListener('DOMContentLoaded',()=>{
   const e=integrity();
   if(e.length){document.body.innerHTML='<pre>正答データ検証エラー\n'+e.slice(0,20).join('\n')+'</pre>';return;}
   $('#verifyStatus').textContent='✓ 公式解答PDFから作成：720 / 720問。起動時に正答キーを自動照合。';
-  $('#tabHome').onclick=()=>page==='kanpo'?requestKanpoExit():(S.active?requestExit({kind:'home'}):renderHome());
-  $('#tabWeak').onclick=()=>{if(page==='kanpo'){if(kanpoDirty){alert('漢方暗記の変更を保存または破棄してから一覧へ移動してください。');requestKanpoExit();}else renderList('weak');}else S.active?requestExit({kind:'list',filter:'weak'}):renderList('weak');};
+  $('#tabHome').onclick=()=>page==='kanpo'?requestKanpoExit():page==='shoyaku'?requestShoyakuExit():(S.active?requestExit({kind:'home'}):renderHome());
+  $('#tabWeak').onclick=()=>{if(page==='kanpo'){if(kanpoDirty){requestKanpoExit();}else renderList('weak');}else if(page==='shoyaku'){if(shoyakuDirty){requestShoyakuExit();}else renderList('weak');}else S.active?requestExit({kind:'list',filter:'weak'}):renderList('weak');};
   $('#settings').onclick=()=>$('#modal').classList.add('show');
   $('#close').onclick=()=>$('#modal').classList.remove('show');
   $('#reset').onclick=()=>{if(confirm('全記録を消しますか？')){S=blank();save();renderHome();$('#modal').classList.remove('show');}};

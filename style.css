@@ -71,3 +71,14 @@
 .kanpoRandomList{margin-top:14px}
 .kanpoRandomList>h2{display:none}
 @media(max-width:620px){.kanpoModeChoices{grid-template-columns:1fr}}
+
+
+/* v9: 生薬暗記モード */
+.shoyakuModeCard{border-color:#c8d6a5;background:#fbfdf6}
+.shoyakuCategory>h2{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.importanceText{font-size:13px;font-weight:800;color:#7a5b00;background:#fff8da;border:1px solid #eadb96;border-radius:999px;padding:2px 8px}
+.shoyakuAnswers{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.shoyakuAnswer{margin-top:0;display:flex;flex-direction:column;gap:6px;min-height:88px}
+.shoyakuLabel{font-size:13px;color:#555;letter-spacing:.04em}
+.shoyakuAnswer.open .shoyakuLabel{color:#222}
+@media(max-width:520px){.shoyakuAnswers{grid-template-columns:1fr}.shoyakuAnswer{min-height:68px}}
