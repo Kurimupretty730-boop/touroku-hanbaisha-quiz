@@ -1,0 +1,38 @@
+{
+  "questions_total": 720,
+  "official_answer_key_total": 720,
+  "official_answer_mismatches": [],
+  "user_explanations_total": 720,
+  "by_year": {
+    "1": {
+      "questions": 120,
+      "user_explanations": 120,
+      "official_answer_mismatches": 0
+    },
+    "2": {
+      "questions": 120,
+      "user_explanations": 120,
+      "official_answer_mismatches": 0
+    },
+    "3": {
+      "questions": 120,
+      "user_explanations": 120,
+      "official_answer_mismatches": 0
+    },
+    "4": {
+      "questions": 120,
+      "user_explanations": 120,
+      "official_answer_mismatches": 0
+    },
+    "5": {
+      "questions": 120,
+      "user_explanations": 120,
+      "official_answer_mismatches": 0
+    },
+    "6": {
+      "questions": 120,
+      "user_explanations": 120,
+      "official_answer_mismatches": 0
+    }
+  }
+}
