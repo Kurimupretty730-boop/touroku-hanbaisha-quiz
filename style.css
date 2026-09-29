@@ -82,3 +82,29 @@
 .shoyakuLabel{font-size:13px;color:#555;letter-spacing:.04em}
 .shoyakuAnswer.open .shoyakuLabel{color:#222}
 @media(max-width:520px){.shoyakuAnswers{grid-template-columns:1fr}.shoyakuAnswer{min-height:68px}}
+
+.controls.four{grid-template-columns:repeat(4,1fr)}
+.sessionSaveMsg{min-height:20px;text-align:center;padding-top:5px}
+@media(max-width:520px){.controls.four{gap:5px}.controls.four button{padding:10px 4px;font-size:13px}}
+
+
+/* v13: 過去回答履歴・表形式問題・既回答スキップ廃止 */
+.questionMeta{align-items:center}
+.attemptHistoryWrap{margin-left:auto;font-size:12px;color:#666;background:#f7f8fa;border:1px solid #e1e4e8;border-radius:999px;padding:4px 8px;max-width:48%;white-space:normal;text-align:right}
+.attemptHistory{color:#c62828;font-size:15px;letter-spacing:1px;overflow-wrap:anywhere}.attemptHistory.empty{color:#888;font-size:12px;letter-spacing:0}
+.stemIntro{margin-bottom:14px}
+.stemTable{margin:12px 0 4px;border:1px solid #e0e3e7;border-radius:12px;overflow:hidden;background:#fff}
+.stemTableHead,.stemTableRow{display:grid;grid-template-columns:34px minmax(90px,.8fr) minmax(0,1.6fr);align-items:stretch}
+.stemTableHead{background:#f4f6f8;border-bottom:1px solid #dfe3e7;font-size:13px}.stemTableHead b{padding:8px 9px;text-align:left}
+.stemTableRow+.stemTableRow{border-top:1px solid #eceff2}.stemTableRow>*{padding:9px 9px;line-height:1.6}.stemTableRow span+span,.stemTableHead b+b{border-left:1px solid #eceff2}
+.stemRowLabel{text-align:center;background:#fafbfc}.stemLeftover{margin-top:10px;white-space:pre-wrap}
+.choiceRefTable{display:block;padding:0;overflow:hidden;border:1px solid #e0e3e7;border-radius:12px}
+.choiceRefTableHead,.choiceRefTableRow{display:grid;grid-template-columns:40px minmax(90px,.8fr) minmax(0,1.6fr);align-items:stretch}
+.choiceRefTableHead{background:#f4f6f8;border-bottom:1px solid #dfe3e7}.choiceRefTableHead b{font-size:13px;padding:8px;text-align:left}
+.choiceRefTableRow+.choiceRefTableRow{border-top:1px solid #eceff2}.choiceRefTableRow>*{padding:9px 8px;line-height:1.55}.choiceRefTableRow span+span,.choiceRefTableHead b+b{border-left:1px solid #eceff2}.choiceRefTableRow .refNo{display:flex;align-items:flex-start;justify-content:center}
+@media(max-width:520px){
+ .attemptHistoryWrap{max-width:100%;margin-left:0}
+ .stemTableHead,.stemTableRow{grid-template-columns:28px minmax(74px,.9fr) minmax(0,1.5fr)}
+ .choiceRefTableHead,.choiceRefTableRow{grid-template-columns:34px minmax(74px,.9fr) minmax(0,1.5fr)}
+ .stemTableRow>*,.choiceRefTableRow>*{padding:8px 6px;font-size:13px}
+}

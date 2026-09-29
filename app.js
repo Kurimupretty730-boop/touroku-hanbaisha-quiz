@@ -187,6 +187,7 @@ const SHOYAKU_CATEGORIES = [
   ]}
 ];
 let shoyakuDraft=null;
+let shoyakuSavedIndex=null;
 let shoyakuDirty=false;
 let shoyakuOnlyNg=false;
 let shoyakuRandom=false;
@@ -195,6 +196,7 @@ let shoyakuRevealed=new Set();
 function shoyakuKey(label){return label.trim();}
 
 let kanpoDraft=null;
+let kanpoSavedIndex=null;
 let kanpoDirty=false;
 let kanpoOnlyNg=false;
 let kanpoRandom=false;
@@ -265,7 +267,7 @@ function renderHome(){
     <div class="card">
       <h2 style="margin-top:0">学習モード</h2>
       <div class="homegrid">
-        <button class="modecard" id="normal"><h3>通常学習</h3><p>年度・章を選んで順番に学習。組み合わせごとの続き位置も保持します。</p></button>
+        <button class="modecard" id="normal"><h3>通常学習</h3><p>年度・章を選んで順番に学習。ここから開始した場合は毎回1問目から始まります。</p></button>
         <button class="modecard" id="parallel"><h3>平行モード</h3><p>同じ章内の同じ問題番号を、令和元〜6年で6問連続して比較します。</p></button>
         <button class="modecard" id="test"><h3>テストモード</h3><p>1年度120問を本番順に解答し、章別正答率と合格基準を表示します。</p></button>
         <button class="modecard kanpoModeCard" id="kanpoMode"><h3>🌿 漢方暗記モード</h3><p>漢方を一覧で確認。解説をタップで表示し、○・×を自分で付けて反復できます。</p></button>
@@ -282,7 +284,7 @@ function renderHome(){
 }
 
 function modeName(type){
-  return ({normal:'通常',parallel:'平行',test:'テスト',review:'復習'})[type]||type;
+  return ({normal:'通常',parallel:'平行',test:'テスト',review:'復習',kanpoMemory:'漢方暗記',shoyakuMemory:'生薬暗記'})[type]||type;
 }
 function savedLabel(a){
   if(a.type==='normal'){
@@ -293,6 +295,8 @@ function savedLabel(a){
   if(a.type==='parallel') return a.chapter==='all'?'全章':chapterName(+a.chapter);
   if(a.type==='test') return `令和${a.year==1?'元':a.year}年度`;
   if(a.type==='review') return a.reviewLabel||'復習';
+  if(a.type==='kanpoMemory') return '漢方暗記・保存記録';
+  if(a.type==='shoyakuMemory') return '生薬暗記・保存記録';
   return '';
 }
 function renderSaved(){
@@ -300,7 +304,7 @@ function renderSaved(){
   if(!S.savedSessions.length){el.innerHTML='<p class="small">保存した学習はありません。</p>';return;}
   el.innerHTML=S.savedSessions.map((s,i)=>`
     <div class="savedRow">
-      <button class="listItem savedOpen" data-i="${i}"><b>${modeName(s.type)}｜${esc(s.label||savedLabel(s))}</b><div class="small">${esc(s.positionLabel||'')}</div></button>
+      <button class="listItem savedOpen" data-i="${i}"><b>${modeName(s.type)}｜${esc(s.label||savedLabel(s))}</b><div class="small">${esc(s.positionLabel||(s.type==='kanpoMemory'||s.type==='shoyakuMemory'?'○×の保存記録':''))}</div></button>
       <button class="savedDelete" data-i="${i}" aria-label="削除">削除</button>
     </div>`).join('');
   el.querySelectorAll('.savedOpen').forEach(b=>b.onclick=()=>resumeSaved(+b.dataset.i));
@@ -314,13 +318,14 @@ function selectorCard(title,body){
   $('#backHome').onclick=renderHome;
 }
 function chooseNormal(){
-  selectorCard('通常学習',`<div class="row"><select id="ySel" class="select"><option value="all">全年度</option>${[1,2,3,4,5,6].map(y=>`<option value="${y}">令和${y===1?'元':y}年度</option>`).join('')}</select><select id="cSel" class="select"><option value="all">全章</option>${CHAPTER_ORDER.map(c=>`<option value="${c}">第${c}章</option>`).join('')}</select></div><p class="small">同じ年度・章の組み合わせは前回位置も保持します。途中状態は別途「保存した学習」に複数保存できます。</p>`);
+  selectorCard('通常学習',`<div class="row"><select id="ySel" class="select"><option value="all">全年度</option>${[1,2,3,4,5,6].map(y=>`<option value="${y}">令和${y===1?'元':y}年度</option>`).join('')}</select><select id="cSel" class="select"><option value="all">全章</option>${CHAPTER_ORDER.map(c=>`<option value="${c}">第${c}章</option>`).join('')}</select></div><p class="small">ここから開始すると、過去の回答履歴に関係なく必ず1問目から始まります。途中から再開したい場合は、問題画面の「保存」を押し、ホームの「保存した学習」から開いてください。</p>`);
   $('#startMode').onclick=()=>startNormal($('#ySel').value,$('#cSel').value);
 }
 function startNormal(y,c){
-  const k=courseKey('normal',y,c), arr=pool(y,c);
-  let idx=S.modeSessions[k]||0; if(idx>=arr.length) idx=0;
-  S.active={type:'normal',year:y,chapter:c,ids:arr.map(q=>q.id),index:idx,key:k,dirty:false};
+  const arr=pool(y,c);
+  // 学習モードから新しく入った場合は、過去の位置に関係なく必ず先頭から。
+  // 過去の○×履歴は S.progress に残るため、問題右上では確認できる。
+  S.active={type:'normal',year:y,chapter:c,ids:arr.map(q=>q.id),index:0,key:null,dirty:false,visited:[]};
   save(); showActive();
 }
 function chooseParallel(){
@@ -339,7 +344,7 @@ function parallelIds(c){
   return ids;
 }
 function startParallel(c){
-  S.active={type:'parallel',chapter:c,ids:parallelIds(c),index:0,key:null,dirty:false};
+  S.active={type:'parallel',chapter:c,ids:parallelIds(c),index:0,key:null,dirty:false,visited:[]};
   save();showActive();
 }
 function chooseTest(){
@@ -348,7 +353,7 @@ function chooseTest(){
 }
 function startTest(y){
   const ids=Q.filter(q=>q.year==y).sort((a,b)=>a.globalNumber-b.globalNumber).map(q=>q.id);
-  S.active={type:'test',year:y,ids,index:0,answers:{},dirty:false};
+  S.active={type:'test',year:y,ids,index:0,answers:{},dirty:false,visited:[]};
   save();showActive();
 }
 function findq(id){return Q.find(q=>q.id===id);}
@@ -361,6 +366,8 @@ function showActive(){
     return finishSession();
   }
   cur=findq(a.ids[a.index]);
+  a.visited=Array.isArray(a.visited)?a.visited:[];
+  if(cur && !a.visited.includes(cur.id)) a.visited.push(cur.id);
   renderQuestion();
   requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}));
 }
@@ -402,12 +409,14 @@ function splitDisplayQuestion(text){
       choices.push(value);
     }
     if(choices.length<4) continue;
-    let headers=null;
+    let headers=null,colHeaders=null;
     const hm=stem.match(/(?:^|\n)\s*([ａｂｃｄｅa-e](?:[ \t　]+[ａｂｃｄｅa-e]){1,4})\s*$/i);
     if(hm){headers=hm[1].trim().split(/[ \t　]+/);stem=stem.slice(0,hm.index).trim();}
-    return {stem,choices,headers};
+    const chm=stem.match(/((?:【[^】]+】\s*){2,4})\s*$/);
+    if(chm){colHeaders=[...chm[1].matchAll(/【([^】]+)】/g)].map(m=>m[1]);stem=stem.slice(0,chm.index).trim();}
+    return {stem,choices,headers,colHeaders};
   }
-  return {stem:s,choices:null,headers:null};
+  return {stem:s,choices:null,headers:null,colHeaders:null};
 }
 function prettyStem(stem){
   let s=String(stem||'').replace(/\r/g,'').trim();
@@ -421,6 +430,9 @@ function prettyStem(stem){
   // 例: 「…いずれも同じ字句が入る。消化管の運動は…」→ 導入文の後に空行を入れる。
   // 「それぞれ同じ字句が入る。」にも対応する。
   s=s.replace(/((?:いずれも|それぞれ)同じ字句が入る。)\s*(?=\S)/g,'$1\n\n');
+  // 穴埋め問題で「正しい組み合わせはどれか。」の直後から本文が始まる場合も分離。
+  // 「なお、…同じ字句が入る。」が続く問題は上の専用ルールでまとめて扱う。
+  s=s.replace(/(正しい組み合わせはどれか。)\s*(?!(?:なお|但し|ただし))(?=\S)/g,'$1\n\n');
   // 「どれか。」等の直後に配合量が続くPDF抽出崩れを強制的に改行。
   s=s.replace(/。\s*(?=[０-９0-9]+\s*(?:錠|カプセル|包|粒|枚|mL|ｍL|ｍＬ|ML|g|ｇ)\s*中)/g,'。\n');
   // 「9錠中アセトアミノフェン」「60mL 中ジヒドロ...」を見出しと成分で分離。
@@ -437,8 +449,62 @@ function parseChoiceParts(t,headers){
   return parts.length===headers.length?parts:null;
 }
 const CIRCLED=['','①','②','③','④','⑤'];
-function choiceReferenceHtml(choices,headers){
+function splitTableCells(text,count=2){
+  let t=String(text||'').trim();
+  // 明示的なダッシュがあれば最優先で左右に分ける。
+  const dm=t.match(/^(.*?)\s*[－―—–-]\s*(.+)$/);
+  if(dm && count===2) return [dm[1].trim(),dm[2].trim()];
+  // PDF抽出で列間が空白1個だけになるケース。2列なら最初の空白境界で分ける。
+  if(count===2){
+    const m=t.match(/^(\S+(?:、\S+)*)[ \t　]+(.+)$/);
+    if(m) return [m[1].trim(),m[2].trim()];
+  }
+  // 3列以上は2個以上の空白を優先して分割。
+  let parts=t.split(/[ \t　]{2,}/).filter(Boolean);
+  if(parts.length===count) return parts;
+  return null;
+}
+function stemHtml(stem){
+  const s=prettyStem(stem);
+  const headers=[...s.matchAll(/【([^】]+)】/g)].map(m=>m[1]);
+  if(headers.length<2) return esc(s);
+  const first=s.indexOf('【');
+  const lineEnd=s.indexOf('\n',first);
+  const headerBlock=(lineEnd>=0?s.slice(first,lineEnd):s.slice(first));
+  const hs=[...headerBlock.matchAll(/【([^】]+)】/g)].map(m=>m[1]);
+  if(hs.length<2) return esc(s);
+  const intro=s.slice(0,first).trim();
+  const rest=(lineEnd>=0?s.slice(lineEnd+1):'').trim();
+  const lines=rest.split('\n').map(x=>x.trim()).filter(Boolean);
+  const rows=[]; const leftovers=[];
+  for(const line of lines){
+    const m=line.match(/^([ａｂｃｄｅa-e])\s+(.+)$/i);
+    if(!m){leftovers.push(line);continue;}
+    const cells=splitTableCells(m[2],hs.length);
+    if(cells) rows.push({label:m[1],cells}); else leftovers.push(line);
+  }
+  if(!rows.length) return esc(s);
+  const table=`<div class="stemTable"><div class="stemTableHead"><span></span>${hs.map(h=>`<b>${esc(h)}</b>`).join('')}</div>${rows.map(r=>`<div class="stemTableRow"><b class="stemRowLabel">${esc(r.label)}</b>${r.cells.map(c=>`<span>${esc(c)}</span>`).join('')}</div>`).join('')}</div>`;
+  return `${intro?`<div class="stemIntro">${esc(intro)}</div>`:''}${table}${leftovers.length?`<div class="stemLeftover">${esc(leftovers.join('\n'))}</div>`:''}`;
+}
+function attemptHistoryText(q){
+  const a=S.progress[q.id]?.attempts||[];
+  return a.map(x=>x.type==='correct'?'○':'×').join('');
+}
+function updateAttemptHistory(){
+  const el=$('#attemptHistory'); if(!el||!cur)return;
+  const t=attemptHistoryText(cur);
+  el.textContent=t||'未回答';
+  el.classList.toggle('empty',!t);
+}
+function choiceReferenceHtml(choices,headers,colHeaders){
   if(!choices?.length) return '';
+  if(colHeaders?.length>=2){
+    const rows=choices.map((t,i)=>({i,cells:splitTableCells(t,colHeaders.length),raw:t}));
+    if(rows.every(r=>r.cells)){
+      return `<div class="choiceReference choiceRefTable" aria-label="選択肢一覧"><div class="choiceRefTableHead"><span></span>${colHeaders.map(h=>`<b>${esc(h)}</b>`).join('')}</div>${rows.map(r=>`<div class="choiceRefTableRow"><b class="refNo">${CIRCLED[r.i+1]}</b>${r.cells.map(c=>`<span>${esc(c)}</span>`).join('')}</div>`).join('')}</div>`;
+    }
+  }
   return `<div class="choiceReference" aria-label="選択肢一覧">${choices.map((t,i)=>{
     const parts=parseChoiceParts(t,headers);
     if(parts){
@@ -456,6 +522,8 @@ function scopeName(a){
   if(a.type==='parallel') return '平行モード';
   if(a.type==='test') return 'テスト';
   if(a.type==='review') return a.reviewLabel||'復習';
+  if(a.type==='kanpoMemory') return '漢方暗記・保存記録';
+  if(a.type==='shoyakuMemory') return '生薬暗記・保存記録';
   return '';
 }
 function renderQuestion(){
@@ -463,20 +531,22 @@ function renderQuestion(){
   $('#scope').textContent=scopeName(a);
   const result=a.type==='test'?a.answers?.[q.id]:null;
   $('#quiz').innerHTML=`<div class="card">
-    <div class="meta"><span class="tag">${q.yearLabel}</span><span class="tag">${q.partLabel} 問${q.partNumber}</span><span class="tag">${chapterName(q.chapter)}・章内問${q.chapterQuestion}</span><span class="badge">${a.index+1}/${a.ids.length}</span></div>
-    <div class="qtext">${esc(prettyStem(disp.stem))}</div>
-    ${choiceReferenceHtml(disp.choices,disp.headers)}
+    <div class="meta questionMeta"><span class="tag">${q.yearLabel}</span><span class="tag">${q.partLabel} 問${q.partNumber}</span><span class="tag">${chapterName(q.chapter)}・章内問${q.chapterQuestion}</span><span class="badge">${a.index+1}/${a.ids.length}</span><span class="attemptHistoryWrap">過去 <b id="attemptHistory" class="attemptHistory">${attemptHistoryText(q)||'未回答'}</b></span></div>
+    <div class="qtext">${stemHtml(disp.stem)}</div>
+    ${choiceReferenceHtml(disp.choices,disp.headers,disp.colHeaders)}
     <div class="answers fixedAnswers" style="--n:${disp.choices?.length||5}">${answerButtons(disp.choices?.length||5)}</div>
     <button class="unknown">わからない</button>
     <div id="result" class="result"></div>
     <div id="weakChoice" class="statusChoice hidden"><div class="small">次へ進む前に、この問題をどう扱うか選べます。</div><div class="statusChoiceBtns"><button id="statusCorrect" class="statusCorrect">✓ 正解</button><button id="statusWeak" class="statusWeak">★ 弱点</button></div></div>
-    <div class="controls three"><button id="prev" ${a.index===0?'disabled':''}>← 前へ</button><button id="questionList">一覧</button><button id="next" class="primary">次へ →</button></div>
+    <div class="controls four"><button id="prev" ${a.index===0?'disabled':''}>← 前へ</button><button id="questionList">一覧</button><button id="saveOnly">💾 保存</button><button id="next" class="primary">次へ →</button></div>
+    <div id="sessionSaveMsg" class="small sessionSaveMsg" aria-live="polite"></div>
     <button id="exit" class="btn" style="width:100%;margin-top:8px">終了・一覧へ戻る</button>
   </div>`;
   $$('.ans').forEach(b=>b.onclick=()=>answer(+b.dataset.n));
   $('.unknown').onclick=()=>answer(null);
   $('#prev').onclick=()=>{a.index--;updateAutoPosition();save();showActive();};
   $('#questionList').onclick=showQuestionGrid;
+  $('#saveOnly').onclick=saveActiveAndContinue;
   $('#next').onclick=goNext;
   $('#exit').onclick=()=>requestExit({kind:a.type==='review'?'list':'home',filter:a.reviewFilter||'all'});
   $('#statusCorrect').onclick=()=>setWeakState(false);
@@ -485,8 +555,8 @@ function renderQuestion(){
 }
 
 function updateAutoPosition(){
-  const a=S.active;
-  if(a?.type==='normal'&&a.key) S.modeSessions[a.key]=a.index;
+  // 以前は通常学習の位置を自動保存していたが、現在は明示的な「保存」だけで再開位置を保持する。
+  // 学習モードからの新規開始は常に1問目から。
 }
 function answer(n){
   const a=S.active,q=cur,ok=n===q.answer,unk=n===null,r=rec(q.id);
@@ -497,7 +567,7 @@ function answer(n){
     a.answers=a.answers||{};
     a.answers[q.id]={selected:n,correct:ok,unknown:unk};
   }
-  a.dirty=true;save();renderStats();reveal(n,ok,unk);
+  a.dirty=true;save();renderStats();updateAttemptHistory();reveal(n,ok,unk);
 }
 function setWeakState(isWeak){
   const r=rec(cur.id);
@@ -535,13 +605,9 @@ function activeAnswer(a,id){
   return {correct:x.type==='correct',unknown:x.type==='unknown',selected:x.selected};
 }
 function isAnsweredActive(a,id){ return !!activeAnswer(a,id); }
-function nextUnansweredIndex(a,from){
-  const n=a.ids.length;
-  for(let step=1;step<=n;step++){
-    const i=(from+step)%n;
-    if(!isAnsweredActive(a,a.ids[i])) return i;
-  }
-  return -1;
+function nextUnvisitedIndex(a){
+  const seen=new Set(Array.isArray(a.visited)?a.visited:[]);
+  return a.ids.findIndex(id=>!seen.has(id));
 }
 function goNext(){
   const a=S.active;if(!a)return;
@@ -550,9 +616,15 @@ function goNext(){
     else finishSession();
     return;
   }
-  const ni=nextUnansweredIndex(a,a.index);
+  // 過去の回答履歴とは無関係に、今の出題順を必ず1問ずつ進む。
+  // 以前に解答済みの問題も飛ばさない。
+  if(a.index<a.ids.length-1){
+    a.index++;
+    updateAutoPosition();save();showActive();return;
+  }
+  // 一覧から途中へジャンプした場合だけ、今回のセッションでまだ表示していない問題へ戻る。
+  const ni=nextUnvisitedIndex(a);
   if(ni>=0){a.index=ni;updateAutoPosition();save();showActive();return;}
-  if(!isAnsweredActive(a,a.ids[a.index])){alert('この問題が未回答です。');return;}
   renderCompletionSummary();
 }
 function answerMark(a,id){
@@ -604,7 +676,7 @@ function renderCompletionSummary(){
 function ensureExitModal(){
   if($('#exitModal')) return;
   const d=document.createElement('div');d.id='exitModal';d.className='modal';
-  d.innerHTML=`<div class="modalbox"><h2>この学習を終了しますか？</h2><p class="small">回答履歴・弱点指定は常に保存されます。「保存して戻る」は、この位置を「保存した学習」に追加します。</p><div class="exitChoices"><button id="exitSave" class="btn primary">保存して戻る</button><button id="exitNoSave" class="btn">保存せず戻る</button><button id="exitCancel" class="btn">問題に戻る</button></div></div>`;
+  d.innerHTML=`<div class="modalbox"><h2>この学習を終了しますか？</h2><p class="small">回答履歴・弱点指定は常に保存されます。「保存して戻る」は、この位置を保存して戻ります。保存データから再開中の場合は同じ保存枠を上書きします。</p><div class="exitChoices"><button id="exitSave" class="btn primary">保存して戻る</button><button id="exitNoSave" class="btn">保存せず戻る</button><button id="exitCancel" class="btn">問題に戻る</button></div></div>`;
   document.body.appendChild(d);
   $('#exitSave').onclick=()=>completeExit(true);
   $('#exitNoSave').onclick=()=>completeExit(false);
@@ -620,7 +692,30 @@ function saveSession(a){
   snap.positionLabel=`${Math.min(a.index+1,a.ids.length)}/${a.ids.length}問目から再開`;
   snap.savedAt=Date.now();
   delete snap.fromSaved;
+
+  // 「保存した学習」から再開した学習は、同じ保存枠へ上書きする。
+  // 新規学習も一度保存した後は、そのまま続けて再保存すると同じ枠を更新する。
+  const i=Number.isInteger(a.fromSaved) ? a.fromSaved : -1;
+  if(i>=0 && S.savedSessions[i]){
+    S.savedSessions[i]=snap;
+    a.fromSaved=i;
+    return {index:i,updated:true};
+  }
   S.savedSessions.push(snap);
+  a.fromSaved=S.savedSessions.length-1;
+  return {index:a.fromSaved,updated:false};
+}
+function saveActiveAndContinue(){
+  const a=S.active;if(!a)return;
+  updateAutoPosition();
+  const result=saveSession(a);
+  save();
+  const msg=$('#sessionSaveMsg');
+  if(msg){
+    msg.textContent=result.updated?'上書き保存しました。':'保存しました。';
+    clearTimeout(saveActiveAndContinue._t);
+    saveActiveAndContinue._t=setTimeout(()=>{const m=$('#sessionSaveMsg');if(m)m.textContent='';},1800);
+  }
 }
 function completeExit(doSave){
   const dest=pendingExit||{kind:'home'};
@@ -636,8 +731,15 @@ function goDestination(dest){
 }
 function resumeSaved(i){
   const src=S.savedSessions[i];if(!src)return;
+  if(src.type==='kanpoMemory'){
+    kanpoSavedIndex=i;kanpoDraft=JSON.parse(JSON.stringify(src.progress||{}));kanpoDirty=false;kanpoOnlyNg=false;kanpoRandom=false;kanpoRandomItems=[];resetKanpoReveal();renderKanpoModeSelect();return;
+  }
+  if(src.type==='shoyakuMemory'){
+    shoyakuSavedIndex=i;shoyakuDraft=JSON.parse(JSON.stringify(src.progress||{}));shoyakuDirty=false;shoyakuOnlyNg=false;shoyakuRandom=false;shoyakuRandomItems=[];resetShoyakuReveal();renderShoyakuModeSelect();return;
+  }
   S.active=JSON.parse(JSON.stringify(src));
   S.active.dirty=false;S.active.fromSaved=i;
+  S.active.visited=Array.isArray(S.active.visited)?S.active.visited:[];
   save();showActive();
 }
 function finishSession(){
@@ -693,6 +795,7 @@ function shuffledKanpo(entries){
 }
 function resetKanpoReveal(){ kanpoRevealed=new Set(); }
 function startKanpo(){
+  kanpoSavedIndex=null;
   if(!S.kanpoProgress || typeof S.kanpoProgress!=='object') S.kanpoProgress={};
   kanpoDraft=JSON.parse(JSON.stringify(S.kanpoProgress));
   kanpoDirty=false;kanpoOnlyNg=false;kanpoRandom=false;kanpoRandomItems=[];resetKanpoReveal();
@@ -701,7 +804,8 @@ function startKanpo(){
 function renderKanpoModeSelect(){
   setPage('kanpo');renderStats();$('#scope').textContent='漢方暗記';
   const st=kanpoStats();
-  $('#kanpo').innerHTML=`<div class="card"><h2>🌿 漢方暗記モード</h2><p class="small">○ ${st.ok}　× ${st.ng}　未選択 ${st.blank}　/ ${st.total}種類</p><p>表示方法を選んでください。</p><div class="kanpoModeChoices"><button id="kanpoCategoryStart" class="modecard"><h3>カテゴリ順</h3><p>かぜ・胃・鼻など、カテゴリ別に一覧表示します。</p></button><button id="kanpoRandomStart" class="modecard kanpoRandomCard"><h3>🔀 完全ランダム</h3><p>カテゴリ名を表示せず、漢方を完全にランダムな順番で並べます。</p></button></div><div style="margin-top:12px"><button id="kanpoSelectExit" class="btn">ホームへ</button></div></div>`;
+  $('#kanpo').innerHTML=`<div class="card"><h2>🌿 漢方暗記モード</h2><p class="small">○ ${st.ok}　× ${st.ng}　未選択 ${st.blank}　/ ${st.total}種類</p><p>表示方法を選んでください。</p><div class="kanpoModeChoices"><button id="kanpoCategoryStart" class="modecard"><h3>カテゴリ順</h3><p>かぜ・胃・鼻など、カテゴリ別に一覧表示します。</p></button><button id="kanpoRandomStart" class="modecard kanpoRandomCard"><h3>🔀 完全ランダム</h3><p>カテゴリ名を表示せず、漢方を完全にランダムな順番で並べます。</p></button></div><div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button id="kanpoResetProgress" class="btn">記録をリセット</button><button id="kanpoSelectExit" class="btn">ホームへ</button></div></div>`;
+  $('#kanpoResetProgress').onclick=requestKanpoReset;
   $('#kanpoCategoryStart').onclick=()=>{kanpoRandom=false;kanpoOnlyNg=false;resetKanpoReveal();renderKanpo();};
   $('#kanpoRandomStart').onclick=()=>{kanpoRandom=true;kanpoOnlyNg=false;resetKanpoReveal();kanpoRandomItems=shuffledKanpo(allKanpoEntries());renderKanpo();};
   $('#kanpoSelectExit').onclick=requestKanpoExit;
@@ -738,7 +842,7 @@ function renderKanpo(){
       return `<section class="kanpoCategory"><h2>${esc(cat.name)}</h2>${items.map(kanpoItemHtml).join('')}</section>`;
     }).join('') || '<div class="card"><p>×の漢方はありません。</p></div>';
   }
-  $('#kanpo').innerHTML=`<div class="kanpoTop card"><div><h2 style="margin:0">🌿 漢方暗記モード</h2><p class="small" style="margin-bottom:0">○ ${st.ok}　× ${st.ng}　未選択 ${st.blank}　/ ${st.total}種類</p><p class="small" style="margin:4px 0 0">表示：${kanpoOnlyNg?'×のみ・':''}${modeLabel}</p></div><div class="kanpoTopBtns"><button id="kanpoCategoryMode" class="btn ${!kanpoRandom?'primary':''}">カテゴリ順</button><button id="kanpoRandomMode" class="btn ${kanpoRandom?'primary':''}">🔀 ランダム</button><button id="kanpoSaveTop" class="btn">保存</button><button id="kanpoExitTop" class="btn">ホームへ</button></div></div>${body}<div class="card kanpoBottom"><button id="kanpoNgMode" class="btn primary">${kanpoOnlyNg?'×のみを再整列':'×のみモード'}</button>${kanpoOnlyNg?'<button id="kanpoAllMode" class="btn">全件表示</button>':''}${kanpoRandom?'<button id="kanpoReshuffle" class="btn">🔀 再シャッフル</button>':''}<button id="kanpoSaveBottom" class="btn">保存</button><button id="kanpoExitBottom" class="btn">ホームへ</button><div id="kanpoSaveMsg" class="small"></div></div>`;
+  $('#kanpo').innerHTML=`<div class="kanpoTop card"><div><h2 style="margin:0">🌿 漢方暗記モード</h2><p class="small" style="margin-bottom:0">○ ${st.ok}　× ${st.ng}　未選択 ${st.blank}　/ ${st.total}種類</p><p class="small" style="margin:4px 0 0">表示：${kanpoOnlyNg?'×のみ・':''}${modeLabel}</p></div><div class="kanpoTopBtns"><button id="kanpoCategoryMode" class="btn ${!kanpoRandom?'primary':''}">カテゴリ順</button><button id="kanpoRandomMode" class="btn ${kanpoRandom?'primary':''}">🔀 ランダム</button><button id="kanpoSaveTop" class="btn">保存</button><button id="kanpoResetTop" class="btn">記録リセット</button><button id="kanpoExitTop" class="btn">ホームへ</button></div></div>${body}<div class="card kanpoBottom"><button id="kanpoNgMode" class="btn primary">${kanpoOnlyNg?'×のみを再整列':'×のみモード'}</button>${kanpoOnlyNg?'<button id="kanpoAllMode" class="btn">全件表示</button>':''}${kanpoRandom?'<button id="kanpoReshuffle" class="btn">🔀 再シャッフル</button>':''}<button id="kanpoSaveBottom" class="btn">保存</button><button id="kanpoExitBottom" class="btn">ホームへ</button><div id="kanpoSaveMsg" class="small"></div></div>`;
   $$('#kanpo .kanpoJudge button').forEach(b=>b.onclick=e=>{
     const item=e.currentTarget.closest('.kanpoItem'),key=item.dataset.key,state=e.currentTarget.dataset.state;
     kanpoDraft[key]=state;kanpoDirty=true;
@@ -754,7 +858,7 @@ function renderKanpo(){
     else{kanpoRevealed.add(rid);btn.classList.add('open');btn.setAttribute('aria-expanded','true');btn.querySelector('.kanpoPlaceholder').textContent=desc;}
   });
   const doSave=()=>saveKanpo();
-  $('#kanpoSaveTop').onclick=doSave;$('#kanpoSaveBottom').onclick=doSave;
+  $('#kanpoSaveTop').onclick=doSave;$('#kanpoSaveBottom').onclick=doSave;$('#kanpoResetTop').onclick=requestKanpoReset;
   $('#kanpoExitTop').onclick=requestKanpoExit;$('#kanpoExitBottom').onclick=requestKanpoExit;
   $('#kanpoCategoryMode').onclick=()=>{kanpoRandom=false;kanpoOnlyNg=false;resetKanpoReveal();renderKanpo();window.scrollTo({top:0,behavior:'auto'});};
   $('#kanpoRandomMode').onclick=()=>{kanpoRandom=true;kanpoOnlyNg=false;resetKanpoReveal();kanpoRandomItems=shuffledKanpo(allKanpoEntries());renderKanpo();window.scrollTo({top:0,behavior:'auto'});};
@@ -763,20 +867,49 @@ function renderKanpo(){
   if($('#kanpoReshuffle')) $('#kanpoReshuffle').onclick=()=>{resetKanpoReveal();kanpoRandomItems=shuffledKanpo(allKanpoEntries().filter(x=>!kanpoOnlyNg||kanpoDraft?.[x.key]==='ng'));renderKanpo();window.scrollTo({top:0,behavior:'auto'});};
 }
 function saveKanpo(){
-  S.kanpoProgress=JSON.parse(JSON.stringify(kanpoDraft||{}));save();kanpoDirty=false;
-  const msg=$('#kanpoSaveMsg');if(msg){msg.textContent='保存しました。';setTimeout(()=>{if($('#kanpoSaveMsg'))$('#kanpoSaveMsg').textContent='';},1800);}
+  const data=JSON.parse(JSON.stringify(kanpoDraft||{}));
+  if(Number.isInteger(kanpoSavedIndex)&&S.savedSessions[kanpoSavedIndex]?.type==='kanpoMemory'){
+    S.savedSessions[kanpoSavedIndex].progress=data;S.savedSessions[kanpoSavedIndex].savedAt=Date.now();
+  }else{
+    S.kanpoProgress=data;
+  }
+  save();kanpoDirty=false;
+  const msg=$('#kanpoSaveMsg');if(msg){msg.textContent=Number.isInteger(kanpoSavedIndex)?'保存記録を上書きしました。':'保存しました。';setTimeout(()=>{if($('#kanpoSaveMsg'))$('#kanpoSaveMsg').textContent='';},1800);}
+}
+function archiveKanpoProgress(){
+  const data=JSON.parse(JSON.stringify(kanpoDraft||S.kanpoProgress||{}));
+  if(Number.isInteger(kanpoSavedIndex)&&S.savedSessions[kanpoSavedIndex]?.type==='kanpoMemory'){
+    S.savedSessions[kanpoSavedIndex].progress=data;S.savedSessions[kanpoSavedIndex].savedAt=Date.now();
+  }else{
+    S.savedSessions.push({type:'kanpoMemory',label:'漢方暗記・保存記録',progress:data,savedAt:Date.now(),positionLabel:'○×の保存記録'});
+  }
+}
+function ensureKanpoResetModal(){
+  if($('#kanpoResetModal'))return;
+  const d=document.createElement('div');d.id='kanpoResetModal';d.className='modal';
+  d.innerHTML=`<div class="modalbox"><h2>漢方暗記の記録をリセットしますか？</h2><p class="small">現在の○×を「保存した学習」に残してからリセットすることもできます。リセット後、漢方暗記モードを開くと未選択の状態から始まります。</p><div class="exitChoices"><button id="kanpoResetSave" class="btn primary">今の状態を保存してリセット</button><button id="kanpoResetNoSave" class="btn">保存せずリセット</button><button id="kanpoResetCancel" class="btn">やめる</button></div></div>`;
+  document.body.appendChild(d);
+  $('#kanpoResetSave').onclick=()=>performKanpoReset(true);
+  $('#kanpoResetNoSave').onclick=()=>performKanpoReset(false);
+  $('#kanpoResetCancel').onclick=()=>$('#kanpoResetModal').classList.remove('show');
+}
+function requestKanpoReset(){ensureKanpoResetModal();$('#kanpoResetModal').classList.add('show');}
+function performKanpoReset(archive){
+  if(archive)archiveKanpoProgress();
+  S.kanpoProgress={};kanpoDraft={};kanpoSavedIndex=null;kanpoDirty=false;kanpoOnlyNg=false;kanpoRandom=false;kanpoRandomItems=[];resetKanpoReveal();
+  save();$('#kanpoResetModal')?.classList.remove('show');renderHome();
 }
 function ensureKanpoExitModal(){
   if($('#kanpoExitModal')) return;
   const d=document.createElement('div');d.id='kanpoExitModal';d.className='modal';
   d.innerHTML=`<div class="modalbox"><h2>漢方暗記を終了しますか？</h2><p class="small">保存しない場合、今回の○×変更は捨てて最後に保存した状態へ戻ります。</p><div class="exitChoices"><button id="kanpoExitSave" class="btn primary">保存して戻る</button><button id="kanpoExitDiscard" class="btn">保存せず戻る</button><button id="kanpoExitCancel" class="btn">漢方暗記に戻る</button></div></div>`;
   document.body.appendChild(d);
-  $('#kanpoExitSave').onclick=()=>{saveKanpo();$('#kanpoExitModal').classList.remove('show');kanpoDraft=null;kanpoDirty=false;renderHome();};
-  $('#kanpoExitDiscard').onclick=()=>{$('#kanpoExitModal').classList.remove('show');kanpoDraft=null;kanpoDirty=false;renderHome();};
+  $('#kanpoExitSave').onclick=()=>{saveKanpo();$('#kanpoExitModal').classList.remove('show');kanpoDraft=null;kanpoSavedIndex=null;kanpoDirty=false;renderHome();};
+  $('#kanpoExitDiscard').onclick=()=>{$('#kanpoExitModal').classList.remove('show');kanpoDraft=null;kanpoSavedIndex=null;kanpoDirty=false;renderHome();};
   $('#kanpoExitCancel').onclick=()=>$('#kanpoExitModal').classList.remove('show');
 }
 function requestKanpoExit(){
-  if(!kanpoDirty){kanpoDraft=null;renderHome();return;}
+  if(!kanpoDirty){kanpoDraft=null;kanpoSavedIndex=null;renderHome();return;}
   ensureKanpoExitModal();$('#kanpoExitModal').classList.add('show');
 }
 
@@ -789,6 +922,7 @@ function allShoyakuEntries(){
 function shuffledShoyaku(a){const x=[...a];for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]];}return x;}
 function resetShoyakuReveal(){shoyakuRevealed=new Set();}
 function startShoyaku(){
+  shoyakuSavedIndex=null;
   if(!S.shoyakuProgress||typeof S.shoyakuProgress!=='object')S.shoyakuProgress={};
   shoyakuDraft=JSON.parse(JSON.stringify(S.shoyakuProgress));
   shoyakuDirty=false;shoyakuOnlyNg=false;shoyakuRandom=false;shoyakuRandomItems=[];resetShoyakuReveal();
@@ -797,7 +931,8 @@ function startShoyaku(){
 function renderShoyakuModeSelect(){
   setPage('shoyaku');renderStats();$('#scope').textContent='生薬暗記';
   const st=shoyakuStats();
-  $('#shoyaku').innerHTML=`<div class="card"><h2>🌱 生薬暗記モード</h2><p class="small">○ ${st.ok}　× ${st.ng}　未選択 ${st.blank}　/ ${st.total}種類</p><p>表示方法を選んでください。</p><div class="kanpoModeChoices"><button id="shoyakuCategoryStart" class="modecard"><h3>カテゴリ順</h3><p>カテゴリと重要度ごとに一覧表示します。</p></button><button id="shoyakuRandomStart" class="modecard kanpoRandomCard"><h3>🔀 完全ランダム</h3><p>カテゴリ名を隠して完全ランダム。名前の後ろに重要度の★だけ表示します。</p></button></div><div style="margin-top:12px"><button id="shoyakuSelectExit" class="btn">ホームへ</button></div></div>`;
+  $('#shoyaku').innerHTML=`<div class="card"><h2>🌱 生薬暗記モード</h2><p class="small">○ ${st.ok}　× ${st.ng}　未選択 ${st.blank}　/ ${st.total}種類</p><p>表示方法を選んでください。</p><div class="kanpoModeChoices"><button id="shoyakuCategoryStart" class="modecard"><h3>カテゴリ順</h3><p>カテゴリと重要度ごとに一覧表示します。</p></button><button id="shoyakuRandomStart" class="modecard kanpoRandomCard"><h3>🔀 完全ランダム</h3><p>カテゴリ名を隠して完全ランダム。名前の後ろに重要度の★だけ表示します。</p></button></div><div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button id="shoyakuResetProgress" class="btn">記録をリセット</button><button id="shoyakuSelectExit" class="btn">ホームへ</button></div></div>`;
+  $('#shoyakuResetProgress').onclick=requestShoyakuReset;
   $('#shoyakuCategoryStart').onclick=()=>{shoyakuRandom=false;shoyakuOnlyNg=false;resetShoyakuReveal();renderShoyaku();};
   $('#shoyakuRandomStart').onclick=()=>{shoyakuRandom=true;shoyakuOnlyNg=false;resetShoyakuReveal();shoyakuRandomItems=shuffledShoyaku(allShoyakuEntries());renderShoyaku();};
   $('#shoyakuSelectExit').onclick=requestShoyakuExit;
@@ -833,25 +968,46 @@ function renderShoyaku(){
       return `<section class="kanpoCategory shoyakuCategory"><h2>${esc(cat.name)} <span class="importanceText">${esc(cat.importance)}　${esc(cat.stars)}</span></h2>${items.map(shoyakuItemHtml).join('')}</section>`;
     }).join('')||'<div class="card"><p>×の生薬はありません。</p></div>';
   }
-  $('#shoyaku').innerHTML=`<div class="kanpoTop card"><div><h2 style="margin:0">🌱 生薬暗記モード</h2><p class="small" style="margin-bottom:0">○ ${st.ok}　× ${st.ng}　未選択 ${st.blank}　/ ${st.total}種類</p><p class="small" style="margin:4px 0 0">表示：${shoyakuOnlyNg?'×のみ・':''}${modeLabel}</p></div><div class="kanpoTopBtns"><button id="shoyakuCategoryMode" class="btn ${!shoyakuRandom?'primary':''}">カテゴリ順</button><button id="shoyakuRandomMode" class="btn ${shoyakuRandom?'primary':''}">🔀 ランダム</button><button id="shoyakuSaveTop" class="btn">保存</button><button id="shoyakuExitTop" class="btn">ホームへ</button></div></div>${body}<div class="card kanpoBottom"><button id="shoyakuNgMode" class="btn primary">${shoyakuOnlyNg?'×のみを再整列':'×のみモード'}</button>${shoyakuOnlyNg?'<button id="shoyakuAllMode" class="btn">全件表示</button>':''}${shoyakuRandom?'<button id="shoyakuReshuffle" class="btn">🔀 再シャッフル</button>':''}<button id="shoyakuSaveBottom" class="btn">保存</button><button id="shoyakuExitBottom" class="btn">ホームへ</button><div id="shoyakuSaveMsg" class="small"></div></div>`;
+  $('#shoyaku').innerHTML=`<div class="kanpoTop card"><div><h2 style="margin:0">🌱 生薬暗記モード</h2><p class="small" style="margin-bottom:0">○ ${st.ok}　× ${st.ng}　未選択 ${st.blank}　/ ${st.total}種類</p><p class="small" style="margin:4px 0 0">表示：${shoyakuOnlyNg?'×のみ・':''}${modeLabel}</p></div><div class="kanpoTopBtns"><button id="shoyakuCategoryMode" class="btn ${!shoyakuRandom?'primary':''}">カテゴリ順</button><button id="shoyakuRandomMode" class="btn ${shoyakuRandom?'primary':''}">🔀 ランダム</button><button id="shoyakuSaveTop" class="btn">保存</button><button id="shoyakuResetTop" class="btn">記録リセット</button><button id="shoyakuExitTop" class="btn">ホームへ</button></div></div>${body}<div class="card kanpoBottom"><button id="shoyakuNgMode" class="btn primary">${shoyakuOnlyNg?'×のみを再整列':'×のみモード'}</button>${shoyakuOnlyNg?'<button id="shoyakuAllMode" class="btn">全件表示</button>':''}${shoyakuRandom?'<button id="shoyakuReshuffle" class="btn">🔀 再シャッフル</button>':''}<button id="shoyakuSaveBottom" class="btn">保存</button><button id="shoyakuExitBottom" class="btn">ホームへ</button><div id="shoyakuSaveMsg" class="small"></div></div>`;
   $$('#shoyaku .kanpoJudge button').forEach(b=>b.onclick=e=>{const item=e.currentTarget.closest('.shoyakuItem'),key=item.dataset.key,state=e.currentTarget.dataset.state;shoyakuDraft[key]=state;shoyakuDirty=true;item.querySelector('.kanpoOk').classList.toggle('on',state==='ok');item.querySelector('.kanpoNg').classList.toggle('on',state==='ng');const st2=shoyakuStats();const p=$('#shoyaku .kanpoTop .small');if(p)p.textContent=`○ ${st2.ok}　× ${st2.ng}　未選択 ${st2.blank}　/ ${st2.total}種類`;});
   $$('#shoyaku .shoyakuAnswer').forEach(b=>b.onclick=e=>{const btn=e.currentTarget,rid=btn.dataset.reveal,kind=btn.dataset.kind,key=rid+':'+kind;const m=rid.match(/^s(\d+)_(\d+)$/);if(!m)return;const item=SHOYAKU_CATEGORIES[+m[1]].items[+m[2]],txt=kind==='origin'?item[1]:item[2];if(shoyakuRevealed.has(key)){shoyakuRevealed.delete(key);btn.classList.remove('open');btn.setAttribute('aria-expanded','false');btn.querySelector('.kanpoPlaceholder').textContent=kind==='origin'?'ここを押すと起源を表示':'ここを押すと作用を表示';}else{shoyakuRevealed.add(key);btn.classList.add('open');btn.setAttribute('aria-expanded','true');btn.querySelector('.kanpoPlaceholder').textContent=txt;}});
-  $('#shoyakuSaveTop').onclick=saveShoyaku;$('#shoyakuSaveBottom').onclick=saveShoyaku;$('#shoyakuExitTop').onclick=requestShoyakuExit;$('#shoyakuExitBottom').onclick=requestShoyakuExit;
+  $('#shoyakuSaveTop').onclick=saveShoyaku;$('#shoyakuSaveBottom').onclick=saveShoyaku;$('#shoyakuResetTop').onclick=requestShoyakuReset;$('#shoyakuExitTop').onclick=requestShoyakuExit;$('#shoyakuExitBottom').onclick=requestShoyakuExit;
   $('#shoyakuCategoryMode').onclick=()=>{shoyakuRandom=false;shoyakuOnlyNg=false;resetShoyakuReveal();renderShoyaku();window.scrollTo({top:0,behavior:'auto'});};
   $('#shoyakuRandomMode').onclick=()=>{shoyakuRandom=true;shoyakuOnlyNg=false;resetShoyakuReveal();shoyakuRandomItems=shuffledShoyaku(allShoyakuEntries());renderShoyaku();window.scrollTo({top:0,behavior:'auto'});};
   $('#shoyakuNgMode').onclick=()=>{shoyakuOnlyNg=true;resetShoyakuReveal();if(shoyakuRandom)shoyakuRandomItems=shuffledShoyaku(allShoyakuEntries().filter(x=>shoyakuDraft?.[x.key]==='ng'));renderShoyaku();window.scrollTo({top:0,behavior:'auto'});};
   if($('#shoyakuAllMode'))$('#shoyakuAllMode').onclick=()=>{shoyakuOnlyNg=false;resetShoyakuReveal();if(shoyakuRandom)shoyakuRandomItems=shuffledShoyaku(allShoyakuEntries());renderShoyaku();window.scrollTo({top:0,behavior:'auto'});};
   if($('#shoyakuReshuffle'))$('#shoyakuReshuffle').onclick=()=>{resetShoyakuReveal();shoyakuRandomItems=shuffledShoyaku(allShoyakuEntries().filter(x=>!shoyakuOnlyNg||shoyakuDraft?.[x.key]==='ng'));renderShoyaku();window.scrollTo({top:0,behavior:'auto'});};
 }
-function saveShoyaku(){S.shoyakuProgress=JSON.parse(JSON.stringify(shoyakuDraft||{}));save();shoyakuDirty=false;const msg=$('#shoyakuSaveMsg');if(msg){msg.textContent='保存しました。';setTimeout(()=>{if($('#shoyakuSaveMsg'))$('#shoyakuSaveMsg').textContent='';},1800);}}
+function saveShoyaku(){
+  const data=JSON.parse(JSON.stringify(shoyakuDraft||{}));
+  if(Number.isInteger(shoyakuSavedIndex)&&S.savedSessions[shoyakuSavedIndex]?.type==='shoyakuMemory'){S.savedSessions[shoyakuSavedIndex].progress=data;S.savedSessions[shoyakuSavedIndex].savedAt=Date.now();}
+  else S.shoyakuProgress=data;
+  save();shoyakuDirty=false;const msg=$('#shoyakuSaveMsg');if(msg){msg.textContent=Number.isInteger(shoyakuSavedIndex)?'保存記録を上書きしました。':'保存しました。';setTimeout(()=>{if($('#shoyakuSaveMsg'))$('#shoyakuSaveMsg').textContent='';},1800);}
+}
+function archiveShoyakuProgress(){
+  const data=JSON.parse(JSON.stringify(shoyakuDraft||S.shoyakuProgress||{}));
+  if(Number.isInteger(shoyakuSavedIndex)&&S.savedSessions[shoyakuSavedIndex]?.type==='shoyakuMemory'){S.savedSessions[shoyakuSavedIndex].progress=data;S.savedSessions[shoyakuSavedIndex].savedAt=Date.now();}
+  else S.savedSessions.push({type:'shoyakuMemory',label:'生薬暗記・保存記録',progress:data,savedAt:Date.now(),positionLabel:'○×の保存記録'});
+}
+function ensureShoyakuResetModal(){
+  if($('#shoyakuResetModal'))return;const d=document.createElement('div');d.id='shoyakuResetModal';d.className='modal';
+  d.innerHTML=`<div class="modalbox"><h2>生薬暗記の記録をリセットしますか？</h2><p class="small">現在の○×を「保存した学習」に残してからリセットすることもできます。リセット後、生薬暗記モードを開くと未選択の状態から始まります。</p><div class="exitChoices"><button id="shoyakuResetSave" class="btn primary">今の状態を保存してリセット</button><button id="shoyakuResetNoSave" class="btn">保存せずリセット</button><button id="shoyakuResetCancel" class="btn">やめる</button></div></div>`;document.body.appendChild(d);
+  $('#shoyakuResetSave').onclick=()=>performShoyakuReset(true);$('#shoyakuResetNoSave').onclick=()=>performShoyakuReset(false);$('#shoyakuResetCancel').onclick=()=>$('#shoyakuResetModal').classList.remove('show');
+}
+function requestShoyakuReset(){ensureShoyakuResetModal();$('#shoyakuResetModal').classList.add('show');}
+function performShoyakuReset(archive){
+  if(archive)archiveShoyakuProgress();
+  S.shoyakuProgress={};shoyakuDraft={};shoyakuSavedIndex=null;shoyakuDirty=false;shoyakuOnlyNg=false;shoyakuRandom=false;shoyakuRandomItems=[];resetShoyakuReveal();
+  save();$('#shoyakuResetModal')?.classList.remove('show');renderHome();
+}
 function ensureShoyakuExitModal(){
   if($('#shoyakuExitModal'))return;const d=document.createElement('div');d.id='shoyakuExitModal';d.className='modal';
   d.innerHTML=`<div class="modalbox"><h2>生薬暗記を終了しますか？</h2><p class="small">保存しない場合、今回の○×変更は捨てて最後に保存した状態へ戻ります。</p><div class="exitChoices"><button id="shoyakuExitSave" class="btn primary">保存して戻る</button><button id="shoyakuExitDiscard" class="btn">保存せず戻る</button><button id="shoyakuExitCancel" class="btn">生薬暗記に戻る</button></div></div>`;document.body.appendChild(d);
-  $('#shoyakuExitSave').onclick=()=>{saveShoyaku();$('#shoyakuExitModal').classList.remove('show');shoyakuDraft=null;shoyakuDirty=false;renderHome();};
-  $('#shoyakuExitDiscard').onclick=()=>{$('#shoyakuExitModal').classList.remove('show');shoyakuDraft=null;shoyakuDirty=false;renderHome();};
+  $('#shoyakuExitSave').onclick=()=>{saveShoyaku();$('#shoyakuExitModal').classList.remove('show');shoyakuDraft=null;shoyakuSavedIndex=null;shoyakuDirty=false;renderHome();};
+  $('#shoyakuExitDiscard').onclick=()=>{$('#shoyakuExitModal').classList.remove('show');shoyakuDraft=null;shoyakuSavedIndex=null;shoyakuDirty=false;renderHome();};
   $('#shoyakuExitCancel').onclick=()=>$('#shoyakuExitModal').classList.remove('show');
 }
-function requestShoyakuExit(){if(!shoyakuDirty){shoyakuDraft=null;renderHome();return;}ensureShoyakuExitModal();$('#shoyakuExitModal').classList.add('show');}
+function requestShoyakuExit(){if(!shoyakuDirty){shoyakuDraft=null;shoyakuSavedIndex=null;renderHome();return;}ensureShoyakuExitModal();$('#shoyakuExitModal').classList.add('show');}
 
 function integrity(){
   const errs=[];if(Q.length!==720)errs.push('問題数');
