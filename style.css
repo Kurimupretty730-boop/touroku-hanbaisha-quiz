@@ -91,7 +91,7 @@
 /* v13: 過去回答履歴・表形式問題・既回答スキップ廃止 */
 .questionMeta{align-items:center}
 .attemptHistoryWrap{margin-left:auto;font-size:12px;color:#666;background:#f7f8fa;border:1px solid #e1e4e8;border-radius:999px;padding:4px 8px;max-width:48%;white-space:normal;text-align:right}
-.attemptHistory{color:#c62828;font-size:15px;letter-spacing:1px;overflow-wrap:anywhere}.attemptHistory.empty{color:#888;font-size:12px;letter-spacing:0}
+.attemptHistory{color:#222;font-size:15px;letter-spacing:1px;overflow-wrap:anywhere}.attemptHistory.empty{color:#888;font-size:12px;letter-spacing:0}
 .stemIntro{margin-bottom:14px}
 .stemTable{margin:12px 0 4px;border:1px solid #e0e3e7;border-radius:12px;overflow:hidden;background:#fff}
 .stemTableHead,.stemTableRow{display:grid;grid-template-columns:34px minmax(90px,.8fr) minmax(0,1.6fr);align-items:stretch}
@@ -108,3 +108,6 @@
  .choiceRefTableHead,.choiceRefTableRow{grid-template-columns:34px minmax(74px,.9fr) minmax(0,1.5fr)}
  .stemTableRow>*,.choiceRefTableRow>*{padding:8px 6px;font-size:13px}
 }
+
+/* v14: 未回答表示をより控えめに */
+.attemptHistory.empty{color:#aaa;font-size:9px;font-weight:400;letter-spacing:0;opacity:.72}

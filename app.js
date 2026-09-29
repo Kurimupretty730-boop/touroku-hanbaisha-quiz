@@ -494,8 +494,9 @@ function attemptHistoryText(q){
 function updateAttemptHistory(){
   const el=$('#attemptHistory'); if(!el||!cur)return;
   const t=attemptHistoryText(cur);
-  el.textContent=t||'未回答';
-  el.classList.toggle('empty',!t);
+  const wrap=$('#attemptHistoryWrap');
+  el.textContent=t;
+  if(wrap) wrap.style.display=t?'':'none';
 }
 function choiceReferenceHtml(choices,headers,colHeaders){
   if(!choices?.length) return '';
@@ -531,7 +532,7 @@ function renderQuestion(){
   $('#scope').textContent=scopeName(a);
   const result=a.type==='test'?a.answers?.[q.id]:null;
   $('#quiz').innerHTML=`<div class="card">
-    <div class="meta questionMeta"><span class="tag">${q.yearLabel}</span><span class="tag">${q.partLabel} 問${q.partNumber}</span><span class="tag">${chapterName(q.chapter)}・章内問${q.chapterQuestion}</span><span class="badge">${a.index+1}/${a.ids.length}</span><span class="attemptHistoryWrap">過去 <b id="attemptHistory" class="attemptHistory">${attemptHistoryText(q)||'未回答'}</b></span></div>
+    <div class="meta questionMeta"><span class="tag">${q.yearLabel}</span><span class="tag">${q.partLabel} 問${q.partNumber}</span><span class="tag">${chapterName(q.chapter)}・章内問${q.chapterQuestion}</span><span class="badge">${a.index+1}/${a.ids.length}</span><span id="attemptHistoryWrap" class="attemptHistoryWrap" style="${attemptHistoryText(q)?'':'display:none'}">過去 <b id="attemptHistory" class="attemptHistory">${attemptHistoryText(q)}</b></span></div>
     <div class="qtext">${stemHtml(disp.stem)}</div>
     ${choiceReferenceHtml(disp.choices,disp.headers,disp.colHeaders)}
     <div class="answers fixedAnswers" style="--n:${disp.choices?.length||5}">${answerButtons(disp.choices?.length||5)}</div>
