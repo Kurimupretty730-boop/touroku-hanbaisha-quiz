@@ -440,7 +440,9 @@ function splitDisplayQuestion(text){
     }
     if(choices.length<4) continue;
     let headers=null,colHeaders=null;
-    const hm=stem.match(/(?:^|\n)\s*([ａｂｃｄｅa-e](?:[ \t　]+[ａｂｃｄｅa-e]){1,4})\s*$/i);
+    // 正誤組合せの列見出し（ア イ ウ エ / ａ ｂ ｃ ｄ 等）を選択肢側へ移す。
+    // 見出しだけが問題文末尾に浮いて見えないよう、回答候補と同じ表の上に配置する。
+    const hm=stem.match(/(?:^|\n)\s*([アイウエオａｂｃｄｅa-e](?:[ \t　]+[アイウエオａｂｃｄｅa-e]){1,4})\s*$/i);
     if(hm){headers=hm[1].trim().split(/[ \t　]+/);stem=stem.slice(0,hm.index).trim();}
     const chm=stem.match(/((?:【[^】]+】\s*){2,4})\s*$/);
     if(chm){colHeaders=[...chm[1].matchAll(/【([^】]+)】/g)].map(m=>m[1]);stem=stem.slice(0,chm.index).trim();}
@@ -468,6 +470,18 @@ function prettyStem(stem){
   // 「9錠中アセトアミノフェン」「60mL 中ジヒドロ...」を見出しと成分で分離。
   s=s.replace(/([０-９0-9]+\s*(?:錠|カプセル|包|粒|枚|mL|ｍL|ｍＬ|ML|g|ｇ)\s*中)\s*/g,'$1\n');
   s=s.replace(/\n{3,}/g,'\n\n').trim();
+  // 記述式の問題は、導入文とア・イ・ウ・エ等の各記述を視覚的に分離する。
+  // 内容そのものは変更せず、改行だけを追加する。
+  {
+    const lines=s.split('\n').map(x=>x.trim());
+    const out=[];
+    for(const line of lines){
+      const isStatement=/^[アイウエオ](?:[ \t　]+|(?=\S))/.test(line) || /^[ａｂｃｄｅ](?:[ \t　]+|(?=\S))/.test(line);
+      if(isStatement && out.length && out[out.length-1]!=='' ) out.push('');
+      out.push(line);
+    }
+    s=out.join('\n').replace(/\n{3,}/g,'\n\n').trim();
+  }
   // 配合量の羅列は、単位の直後で次の成分名が続く場合のみ改行。
   s=s.replace(/([０-９0-9]+(?:[.．][０-９0-9]+)?\s*(?:mg|ｍｇ|g|ｇ|mL|ｍL|ｍＬ|μg|µg))\s*(?=[ァ-ヶ一-龠々A-Za-zｄｌＤＬ])/g,'$1\n');
   return s;
@@ -536,14 +550,15 @@ function choiceReferenceHtml(choices,headers,colHeaders){
       return `<div class="choiceReference choiceRefTable" aria-label="選択肢一覧"><div class="choiceRefTableHead"><span></span>${colHeaders.map(h=>`<b>${esc(h)}</b>`).join('')}</div>${rows.map(r=>`<div class="choiceRefTableRow"><b class="refNo">${CIRCLED[r.i+1]}</b>${r.cells.map(c=>`<span>${esc(c)}</span>`).join('')}</div>`).join('')}</div>`;
     }
   }
-  return `<div class="choiceReference" aria-label="選択肢一覧">${choices.map((t,i)=>{
-    const parts=parseChoiceParts(t,headers);
-    if(parts){
-      const body=headers.map((h,j)=>`<span class="compactPart"><b>${esc(h)}</b> ${esc(parts[j])}</span>`).join('<span class="compactSep">　</span>');
-      return `<div class="choiceRefLine"><b class="refNo">${CIRCLED[i+1]}</b><span>${body}</span></div>`;
+  // 「ア イ ウ エ」+「正 誤 …」の組合せは、見出しと各値を同じ列に固定して表示する。
+  // 元の文字列は一切変更せず、表示上だけ表形式にする。
+  if(headers?.length>=2){
+    const rows=choices.map((t,i)=>({i,parts:parseChoiceParts(t,headers),raw:t}));
+    if(rows.every(r=>r.parts)){
+      return `<div class="choiceReference comboChoiceTable" style="--combo-cols:${headers.length}" aria-label="選択肢一覧"><div class="comboChoiceHead"><span></span>${headers.map(h=>`<b>${esc(h)}</b>`).join('')}</div>${rows.map(r=>`<div class="comboChoiceRow"><b class="refNo">${CIRCLED[r.i+1]}</b>${r.parts.map(v=>`<span>${esc(v)}</span>`).join('')}</div>`).join('')}</div>`;
     }
-    return `<div class="choiceRefLine"><b class="refNo">${CIRCLED[i+1]}</b><span>${esc(t)}</span></div>`;
-  }).join('')}</div>`;
+  }
+  return `<div class="choiceReference" aria-label="選択肢一覧">${choices.map((t,i)=>`<div class="choiceRefLine"><b class="refNo">${CIRCLED[i+1]}</b><span>${esc(t)}</span></div>`).join('')}</div>`;
 }
 function answerButtons(count=5){
   return Array.from({length:count},(_,i)=>i+1).map(n=>`<button class="ans" data-n="${n}" aria-label="選択肢${n}">${CIRCLED[n]}</button>`).join('');

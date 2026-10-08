@@ -116,3 +116,21 @@
 .regionSwitch{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px;padding:4px;background:#e9ecef;border-radius:12px}
 .regionBtn{border:0;background:transparent;border-radius:9px;padding:8px 10px;font-weight:800;color:#666;cursor:pointer}
 .regionBtn.active{background:#fff;color:#17191c;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+
+
+/* v15: 問題文・各記述・正誤組合せを読みやすく分離 */
+.qtext{margin-bottom:10px}
+.choiceReference{margin-top:20px}
+.comboChoiceTable{display:block;overflow-x:auto;padding:12px 0}
+.comboChoiceHead,.comboChoiceRow{display:grid;grid-template-columns:34px repeat(var(--combo-cols,4),minmax(42px,1fr));align-items:center;column-gap:4px;min-width:300px;text-align:center}
+.comboChoiceHead{padding:0 6px 7px;border-bottom:1px solid #dfe3e7;font-size:13px}
+.comboChoiceHead b{font-weight:700}
+.comboChoiceRow{padding:7px 6px;border-bottom:1px solid #f0f1f3;font-size:14px;line-height:1.35}
+.comboChoiceRow:last-child{border-bottom:0}
+.comboChoiceRow .refNo{text-align:center}
+@media(max-width:520px){
+  .qtext{margin-bottom:8px}
+  .choiceReference{margin-top:17px}
+  .comboChoiceHead,.comboChoiceRow{grid-template-columns:30px repeat(var(--combo-cols,4),minmax(38px,1fr));min-width:270px;column-gap:2px}
+  .comboChoiceHead{font-size:12px}.comboChoiceRow{font-size:13px;padding:7px 4px}
+}
