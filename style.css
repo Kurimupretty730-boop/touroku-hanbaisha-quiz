@@ -111,3 +111,8 @@
 
 /* v14: 未回答表示をより控えめに */
 .attemptHistory.empty{color:#aaa;font-size:9px;font-weight:400;letter-spacing:0;opacity:.72}
+
+/* v16: 岡山版 / 熊本版 切替 */
+.regionSwitch{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px;padding:4px;background:#e9ecef;border-radius:12px}
+.regionBtn{border:0;background:transparent;border-radius:9px;padding:8px 10px;font-weight:800;color:#666;cursor:pointer}
+.regionBtn.active{background:#fff;color:#17191c;box-shadow:0 1px 4px rgba(0,0,0,.08)}

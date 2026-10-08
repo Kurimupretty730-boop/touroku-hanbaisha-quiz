@@ -1,6 +1,11 @@
-const Q = window.QUIZ_QUESTIONS;
+let Q = window.QUIZ_BANKS?.okayama || window.QUIZ_QUESTIONS;
 const K = 'touroku720_v1';
-const CHAPTER_ORDER = [1, 2, 4, 3, 5];
+const OKAYAMA_CHAPTER_ORDER = [1, 2, 4, 3, 5];
+const KUMAMOTO_CHAPTER_ORDER = [1, 2, 3, 4, 5];
+function regionKey(){ return S?.currentRegion==='kumamoto'?'kumamoto':'okayama'; }
+function regionLabel(){ return regionKey()==='kumamoto'?'熊本版':'岡山版'; }
+function chapterOrder(){ return regionKey()==='kumamoto'?KUMAMOTO_CHAPTER_ORDER:OKAYAMA_CHAPTER_ORDER; }
+function sessionRegion(s){ return s?.region || 'okayama'; }
 
 const KANPO_CATEGORIES = [
   {name:'かぜ',items:[
@@ -204,6 +209,7 @@ let kanpoRandomItems=[];
 let kanpoRevealed=new Set();
 function kanpoKey(label){ return label.replace(/（.*$/,'').trim(); }
 let S = load();
+Q = window.QUIZ_BANKS?.[regionKey()] || window.QUIZ_QUESTIONS;
 let cur = null;
 let page = 'home';
 let pendingExit = null;
@@ -212,7 +218,7 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 
 function blank(){
-  return {progress:{}, modeSessions:{}, savedSessions:[], active:null, kanpoProgress:{}, shoyakuProgress:{}};
+  return {currentRegion:'okayama',progress:{}, modeSessions:{}, savedSessions:[], active:null, kanpoProgress:{}, shoyakuProgress:{}};
 }
 function load(){
   try{return Object.assign(blank(), JSON.parse(localStorage.getItem(K)||'{}'));}
@@ -253,6 +259,7 @@ function setPage(p){
   page=p;
   ['home','quiz','listPage','kanpo','shoyaku'].forEach(x=>$('#'+x).classList.add('hidden'));
   $('#'+p).classList.remove('hidden');
+  $('#regionSwitch')?.classList.toggle('hidden',p!=='home');
   $('#tabHome').classList.toggle('active',p==='home');
   $('#tabWeak').classList.toggle('active',p==='listPage');
 }
@@ -261,8 +268,28 @@ function pool(year='all',chapter='all'){
   return Q.filter(q=>(year==='all'||q.year==year)&&(chapter==='all'||q.chapter==chapter));
 }
 
+function syncRegionUI(){
+  const r=regionKey();
+  $('#regionOkayama')?.classList.toggle('active',r==='okayama');
+  $('#regionKumamoto')?.classList.toggle('active',r==='kumamoto');
+  if($('#verifyStatus')){
+    $('#verifyStatus').textContent=r==='kumamoto'
+      ?'✓ 熊本版：ユーザー提供の九州・沖縄エリア Verified テキストから720問を収録。問題・正答・解説は提供テキストを使用。'
+      :'✓ 岡山版：公式解答PDFから作成：720 / 720問。起動時に正答キーを自動照合。';
+  }
+}
+function switchRegion(r){
+  if(r!=='okayama'&&r!=='kumamoto')return;
+  if(r===regionKey())return;
+  S.currentRegion=r;
+  S.active=null;
+  Q=window.QUIZ_BANKS[r];
+  save();
+  syncRegionUI();
+  renderHome();
+}
 function renderHome(){
-  setPage('home'); renderStats(); $('#scope').textContent='全720問';
+  setPage('home'); syncRegionUI(); renderStats(); $('#scope').textContent=`${regionLabel()}・全720問`;
   $('#home').innerHTML=`
     <div class="card">
       <h2 style="margin-top:0">学習モード</h2>
@@ -301,8 +328,11 @@ function savedLabel(a){
 }
 function renderSaved(){
   const el=$('#saved');
-  if(!S.savedSessions.length){el.innerHTML='<p class="small">保存した学習はありません。</p>';return;}
-  el.innerHTML=S.savedSessions.map((s,i)=>`
+  const rows=S.savedSessions.map((s,i)=>({s,i})).filter(({s})=>
+    s.type==='kanpoMemory'||s.type==='shoyakuMemory'||sessionRegion(s)===regionKey()
+  );
+  if(!rows.length){el.innerHTML='<p class="small">保存した学習はありません。</p>';return;}
+  el.innerHTML=rows.map(({s,i})=>`
     <div class="savedRow">
       <button class="listItem savedOpen" data-i="${i}"><b>${modeName(s.type)}｜${esc(s.label||savedLabel(s))}</b><div class="small">${esc(s.positionLabel||(s.type==='kanpoMemory'||s.type==='shoyakuMemory'?'○×の保存記録':''))}</div></button>
       <button class="savedDelete" data-i="${i}" aria-label="削除">削除</button>
@@ -318,22 +348,22 @@ function selectorCard(title,body){
   $('#backHome').onclick=renderHome;
 }
 function chooseNormal(){
-  selectorCard('通常学習',`<div class="row"><select id="ySel" class="select"><option value="all">全年度</option>${[1,2,3,4,5,6].map(y=>`<option value="${y}">令和${y===1?'元':y}年度</option>`).join('')}</select><select id="cSel" class="select"><option value="all">全章</option>${CHAPTER_ORDER.map(c=>`<option value="${c}">第${c}章</option>`).join('')}</select></div><p class="small">ここから開始すると、過去の回答履歴に関係なく必ず1問目から始まります。途中から再開したい場合は、問題画面の「保存」を押し、ホームの「保存した学習」から開いてください。</p>`);
+  selectorCard('通常学習',`<div class="row"><select id="ySel" class="select"><option value="all">全年度</option>${[1,2,3,4,5,6].map(y=>`<option value="${y}">令和${y===1?'元':y}年度</option>`).join('')}</select><select id="cSel" class="select"><option value="all">全章</option>${chapterOrder().map(c=>`<option value="${c}">第${c}章</option>`).join('')}</select></div><p class="small">ここから開始すると、過去の回答履歴に関係なく必ず1問目から始まります。途中から再開したい場合は、問題画面の「保存」を押し、ホームの「保存した学習」から開いてください。</p>`);
   $('#startMode').onclick=()=>startNormal($('#ySel').value,$('#cSel').value);
 }
 function startNormal(y,c){
   const arr=pool(y,c);
   // 学習モードから新しく入った場合は、過去の位置に関係なく必ず先頭から。
   // 過去の○×履歴は S.progress に残るため、問題右上では確認できる。
-  S.active={type:'normal',year:y,chapter:c,ids:arr.map(q=>q.id),index:0,key:null,dirty:false,visited:[]};
+  S.active={type:'normal',region:regionKey(),year:y,chapter:c,ids:arr.map(q=>q.id),index:0,key:null,dirty:false,visited:[]};
   save(); showActive();
 }
 function chooseParallel(){
-  selectorCard('平行モード',`<div class="row"><select id="cSel" class="select"><option value="all">全章</option>${CHAPTER_ORDER.map(c=>`<option value="${c}">第${c}章</option>`).join('')}</select></div><p class="small">例：第1章なら「R1章内問1→R2章内問1→…→R6章内問1→R1章内問2…」。</p>`);
+  selectorCard('平行モード',`<div class="row"><select id="cSel" class="select"><option value="all">全章</option>${chapterOrder().map(c=>`<option value="${c}">第${c}章</option>`).join('')}</select></div><p class="small">例：第1章なら「R1章内問1→R2章内問1→…→R6章内問1→R1章内問2…」。</p>`);
   $('#startMode').onclick=()=>startParallel($('#cSel').value);
 }
 function parallelIds(c){
-  const chs=c==='all'?CHAPTER_ORDER:[+c], ids=[];
+  const chs=c==='all'?chapterOrder():[+c], ids=[];
   chs.forEach(ch=>{
     const max=ch===3?40:20;
     for(let cq=1;cq<=max;cq++) for(let y=1;y<=6;y++){
@@ -344,7 +374,7 @@ function parallelIds(c){
   return ids;
 }
 function startParallel(c){
-  S.active={type:'parallel',chapter:c,ids:parallelIds(c),index:0,key:null,dirty:false,visited:[]};
+  S.active={type:'parallel',region:regionKey(),chapter:c,ids:parallelIds(c),index:0,key:null,dirty:false,visited:[]};
   save();showActive();
 }
 function chooseTest(){
@@ -353,7 +383,7 @@ function chooseTest(){
 }
 function startTest(y){
   const ids=Q.filter(q=>q.year==y).sort((a,b)=>a.globalNumber-b.globalNumber).map(q=>q.id);
-  S.active={type:'test',year:y,ids,index:0,answers:{},dirty:false,visited:[]};
+  S.active={type:'test',region:regionKey(),year:y,ids,index:0,answers:{},dirty:false,visited:[]};
   save();showActive();
 }
 function findq(id){return Q.find(q=>q.id===id);}
@@ -532,7 +562,7 @@ function renderQuestion(){
   $('#scope').textContent=scopeName(a);
   const result=a.type==='test'?a.answers?.[q.id]:null;
   $('#quiz').innerHTML=`<div class="card">
-    <div class="meta questionMeta"><span class="tag">${q.yearLabel}</span><span class="tag">${q.partLabel} 問${q.partNumber}</span><span class="tag">${chapterName(q.chapter)}・章内問${q.chapterQuestion}</span><span class="badge">${a.index+1}/${a.ids.length}</span><span id="attemptHistoryWrap" class="attemptHistoryWrap" style="${attemptHistoryText(q)?'':'display:none'}">過去 <b id="attemptHistory" class="attemptHistory">${attemptHistoryText(q)}</b></span></div>
+    <div class="meta questionMeta"><span class="tag">${q.regionLabel||'岡山版'}</span><span class="tag">${q.yearLabel}</span>${q.region==='kumamoto'?`<span class="tag">${chapterName(q.chapter)}・問${q.chapterQuestion}</span>`:`<span class="tag">${q.partLabel} 問${q.partNumber}</span><span class="tag">${chapterName(q.chapter)}・章内問${q.chapterQuestion}</span>`}<span class="badge">${a.index+1}/${a.ids.length}</span><span id="attemptHistoryWrap" class="attemptHistoryWrap" style="${attemptHistoryText(q)?'':'display:none'}">過去 <b id="attemptHistory" class="attemptHistory">${attemptHistoryText(q)}</b></span></div>
     <div class="qtext">${stemHtml(disp.stem)}</div>
     ${choiceReferenceHtml(disp.choices,disp.headers,disp.colHeaders)}
     <div class="answers fixedAnswers" style="--n:${disp.choices?.length||5}">${answerButtons(disp.choices?.length||5)}</div>
@@ -560,7 +590,7 @@ function updateAutoPosition(){
   // 学習モードからの新規開始は常に1問目から。
 }
 function answer(n){
-  const a=S.active,q=cur,ok=n===q.answer,unk=n===null,r=rec(q.id);
+  const a=S.active,q=cur,unk=n===null,ok=q.allCorrect?true:n===q.answer,r=rec(q.id);
   r.attempts.push({type:unk?'unknown':ok?'correct':'wrong',selected:n,ts:Date.now()});
   // 不正解・わからないは自動で弱点。正解は既定で弱点解除。
   r.weakState=!(ok&&!unk);
@@ -587,14 +617,18 @@ function renderWeakChoice(){
 function reveal(n,ok,unk){
   $$('.ans').forEach(b=>{
     const x=+b.dataset.n;b.disabled=true;
-    if(x===cur.answer)b.classList.add('correct');
+    if(cur.allCorrect){
+      if(!unk&&x===n)b.classList.add('correct'); else b.classList.add('dim');
+    }else if(x===cur.answer)b.classList.add('correct');
     else if(!unk&&x===n)b.classList.add('wrong');
     else b.classList.add('dim');
   });
   $('.unknown').disabled=true;
   const res=$('#result');
   res.className='result show '+(unk?'unk':ok?'ok':'ng');
-  res.innerHTML=`${unk?'正解：':ok?'⭕ 正解：':'❌ 不正解　正解：'}${CIRCLED[cur.answer]||cur.answer}<div class="explain"><b>解説</b>\n${esc(cur.explanation||'正答番号は公式解答PDFと照合済みです。')}${cur.explanationSource?`<div class="sourceLink"><a href="${cur.explanationSource}" target="_blank" rel="noopener">詳しい解説元（35189.jp）を開く ↗</a></div>`:''}</div>`;
+  const answerText=cur.allCorrect?'正解なし（採点上は受験者全員を正解として加点）':`${CIRCLED[cur.answer]||cur.answer}`;
+  const head=cur.allCorrect?(unk?'採点上：':'⭕ 採点上：'):(unk?'正解：':ok?'⭕ 正解：':'❌ 不正解　正解：');
+  res.innerHTML=`${head}${answerText}<div class="explain"><b>解説</b>\n${esc(cur.explanation||'（提供テキストに解説の記載なし）')}${cur.explanationSource?`<div class="sourceLink"><a href="${cur.explanationSource}" target="_blank" rel="noopener">詳しい解説元（35189.jp）を開く ↗</a></div>`:''}</div>`;
   renderWeakChoice();
 }
 
@@ -662,9 +696,9 @@ function renderCompletionSummary(){
   const fullYear=oneYear&&total===120&&new Set(items.map(q=>q.globalNumber)).size===120;
   let extra='';
   if(fullYear){
-    const by={};CHAPTER_ORDER.forEach(ch=>by[ch]={n:0,c:0});
+    const by={};chapterOrder().forEach(ch=>by[ch]={n:0,c:0});
     answers.forEach(({q,x})=>{by[q.chapter].n++;if(x?.correct)by[q.chapter].c++;});
-    const rows=CHAPTER_ORDER.map(ch=>{const x=by[ch],p=x.n?x.c/x.n*100:0,need=Math.max(0,Math.ceil(x.n*.4)-x.c);return `<tr><td>${chapterName(ch)}</td><td>${x.c}/${x.n}</td><td>${p.toFixed(1)}%</td><td>${need?`40%まであと${need}問`:'40%以上'}</td></tr>`;}).join('');
+    const rows=chapterOrder().map(ch=>{const x=by[ch],p=x.n?x.c/x.n*100:0,need=Math.max(0,Math.ceil(x.n*.4)-x.c);return `<tr><td>${chapterName(ch)}</td><td>${x.c}/${x.n}</td><td>${p.toFixed(1)}%</td><td>${need?`40%まであと${need}問`:'40%以上'}</td></tr>`;}).join('');
     const need70=Math.max(0,84-correct),pass=correct>=84&&Object.values(by).every(x=>x.n&&x.c/x.n>=.4);
     extra=`<p>${need70?`70%（84問）まであと${need70}問`:'総合70%以上'}</p><table><tr><th>章</th><th>正解</th><th>率</th><th>基準</th></tr>${rows}</table><h3>${pass?'合格基準クリア':'基準未達'}</h3><p class="small">判定基準：総合70%以上かつ各章40%以上。</p>`;
   }
@@ -692,6 +726,7 @@ function saveSession(a){
   snap.label=savedLabel(a);
   snap.positionLabel=`${Math.min(a.index+1,a.ids.length)}/${a.ids.length}問目から再開`;
   snap.savedAt=Date.now();
+  snap.region=snap.region||regionKey();
   delete snap.fromSaved;
 
   // 「保存した学習」から再開した学習は、同じ保存枠へ上書きする。
@@ -732,6 +767,11 @@ function goDestination(dest){
 }
 function resumeSaved(i){
   const src=S.savedSessions[i];if(!src)return;
+  if(src.type!=='kanpoMemory'&&src.type!=='shoyakuMemory'){
+    S.currentRegion=sessionRegion(src);
+    Q=window.QUIZ_BANKS[S.currentRegion];
+    syncRegionUI();
+  }
   if(src.type==='kanpoMemory'){
     kanpoSavedIndex=i;kanpoDraft=JSON.parse(JSON.stringify(src.progress||{}));kanpoDirty=false;kanpoOnlyNg=false;kanpoRandom=false;kanpoRandomItems=[];resetKanpoReveal();renderKanpoModeSelect();return;
   }
@@ -749,9 +789,9 @@ function finishSession(){
   $('#done').onclick=renderHome;
 }
 function renderTestSummary(){
-  const a=S.active,items=Q.filter(q=>q.year==a.year),by={};CHAPTER_ORDER.forEach(ch=>by[ch]={n:0,c:0});
+  const a=S.active,items=Q.filter(q=>q.year==a.year),by={};chapterOrder().forEach(ch=>by[ch]={n:0,c:0});
   let total=0;items.forEach(q=>{by[q.chapter].n++;if(a.answers?.[q.id]?.correct){by[q.chapter].c++;total++;}});
-  const rows=CHAPTER_ORDER.map(ch=>{const x=by[ch],p=x.c/x.n*100,need=Math.max(0,Math.ceil(x.n*.4)-x.c);return`<tr><td>${chapterName(ch)}</td><td>${x.c}/${x.n}</td><td>${p.toFixed(1)}%</td><td>${need?`40%まであと${need}問`:'40%以上'}</td></tr>`;}).join('');
+  const rows=chapterOrder().map(ch=>{const x=by[ch],p=x.c/x.n*100,need=Math.max(0,Math.ceil(x.n*.4)-x.c);return`<tr><td>${chapterName(ch)}</td><td>${x.c}/${x.n}</td><td>${p.toFixed(1)}%</td><td>${need?`40%まであと${need}問`:'40%以上'}</td></tr>`;}).join('');
   const need70=Math.max(0,84-total),pass=total>=84&&Object.values(by).every(x=>x.c/x.n>=.4);
   $('#quiz').innerHTML=`<div class="card testSummary"><h2>令和${a.year==1?'元':a.year}年度 結果</h2><p><b>総合 ${total}/120（${(total/120*100).toFixed(1)}%）</b><br>${need70?`70%（84問）まであと${need70}問`:'総合70%以上'}</p><table><tr><th>章</th><th>正解</th><th>率</th><th>基準</th></tr>${rows}</table><h3>${pass?'合格基準クリア':'基準未達'}</h3><p class="small">判定基準：総合70%以上かつ各章40%以上。</p><button class="btn primary" id="done">ホームへ</button></div>`;
   $('#done').onclick=()=>{S.active=null;save();renderHome();};
@@ -768,7 +808,7 @@ function listMatch(q,f){
 function filterLabel(f){return ({all:'全問題',answered:'回答済み',correct:'正解',weak:'弱点'})[f]||'一覧';}
 function renderList(initialFilter='all',initialChapter='all'){
   setPage('listPage');renderStats();$('#scope').textContent=filterLabel(initialFilter);
-  $('#listPage').innerHTML=`<div class="card"><h2>問題一覧</h2><div class="row"><select id="lf" class="select"><option value="all">全問題</option><option value="answered">回答済み</option><option value="correct">正解</option><option value="weak">弱点</option></select><select id="lc" class="select"><option value="all">全章</option>${CHAPTER_ORDER.map(c=>`<option value="${c}">第${c}章</option>`).join('')}</select></div><div id="li"></div></div>`;
+  $('#listPage').innerHTML=`<div class="card"><h2>問題一覧</h2><div class="row"><select id="lf" class="select"><option value="all">全問題</option><option value="answered">回答済み</option><option value="correct">正解</option><option value="weak">弱点</option></select><select id="lc" class="select"><option value="all">全章</option>${chapterOrder().map(c=>`<option value="${c}">第${c}章</option>`).join('')}</select></div><div id="li"></div></div>`;
   $('#lf').value=initialFilter;$('#lc').value=String(initialChapter);
   function draw(){
     const f=$('#lf').value,c=$('#lc').value;
@@ -777,7 +817,7 @@ function renderList(initialFilter='all',initialChapter='all'){
     $('#li').innerHTML=arr.length?arr.map((q,i)=>`<button class="listItem" data-i="${i}"><b>${q.yearLabel}｜${chapterName(q.chapter)}｜章内問${q.chapterQuestion}</b><div class="small">${esc(q.title)}</div></button>`).join(''):'<p class="small">該当なし</p>';
     $('#li').querySelectorAll('.listItem').forEach(b=>b.onclick=()=>{
       const ids=arr.map(x=>x.id),idx=+b.dataset.i;
-      S.active={type:'review',reviewFilter:f,reviewChapter:c,reviewLabel:`${filterLabel(f)}復習`,ids,index:idx,dirty:false};
+      S.active={type:'review',region:regionKey(),reviewFilter:f,reviewChapter:c,reviewLabel:`${filterLabel(f)}復習`,ids,index:idx,dirty:false};
       save();showActive();
     });
   }
@@ -1011,9 +1051,17 @@ function ensureShoyakuExitModal(){
 function requestShoyakuExit(){if(!shoyakuDirty){shoyakuDraft=null;shoyakuSavedIndex=null;renderHome();return;}ensureShoyakuExitModal();$('#shoyakuExitModal').classList.add('show');}
 
 function integrity(){
-  const errs=[];if(Q.length!==720)errs.push('問題数');
-  if(new Set(Q.map(q=>q.id)).size!==720)errs.push('ID重複');
-  Q.forEach(q=>{if(window.OFFICIAL_ANSWER_KEY[q.id]!==q.answer)errs.push(q.id);});
+  const errs=[];
+  for(const r of ['okayama','kumamoto']){
+    const bank=window.QUIZ_BANKS?.[r]||[];
+    const key=window.ANSWER_KEYS?.[r]||{};
+    if(bank.length!==720)errs.push(`${r}:問題数`);
+    if(new Set(bank.map(q=>q.id)).size!==720)errs.push(`${r}:ID重複`);
+    bank.forEach(q=>{
+      const expected=q.allCorrect?'ALL':q.answer;
+      if(key[q.id]!==expected)errs.push(`${r}:${q.id}`);
+    });
+  }
   return errs;
 }
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
@@ -1022,7 +1070,11 @@ function exportData(){
   a.href=URL.createObjectURL(b);a.download='登録販売者720問_進捗.json';a.click();
 }
 function importData(f){
-  const r=new FileReader();r.onload=()=>{try{S=Object.assign(blank(),JSON.parse(r.result));save();renderHome();$('#modal').classList.remove('show');}catch{alert('読み込めません');}};r.readAsText(f);
+  const r=new FileReader();r.onload=()=>{try{
+    S=Object.assign(blank(),JSON.parse(r.result));
+    Q=window.QUIZ_BANKS?.[regionKey()]||window.QUIZ_QUESTIONS;
+    save();renderHome();$('#modal').classList.remove('show');
+  }catch{alert('読み込めません');}};r.readAsText(f);
 }
 function statDestination(filter){
   const dest={kind:'list',filter};
@@ -1034,12 +1086,14 @@ function statDestination(filter){
 window.addEventListener('DOMContentLoaded',()=>{
   const e=integrity();
   if(e.length){document.body.innerHTML='<pre>正答データ検証エラー\n'+e.slice(0,20).join('\n')+'</pre>';return;}
-  $('#verifyStatus').textContent='✓ 公式解答PDFから作成：720 / 720問。起動時に正答キーを自動照合。';
+  syncRegionUI();
+  $('#regionOkayama').onclick=()=>switchRegion('okayama');
+  $('#regionKumamoto').onclick=()=>switchRegion('kumamoto');
   $('#tabHome').onclick=()=>page==='kanpo'?requestKanpoExit():page==='shoyaku'?requestShoyakuExit():(S.active?requestExit({kind:'home'}):renderHome());
   $('#tabWeak').onclick=()=>{if(page==='kanpo'){if(kanpoDirty){requestKanpoExit();}else renderList('weak');}else if(page==='shoyaku'){if(shoyakuDirty){requestShoyakuExit();}else renderList('weak');}else S.active?requestExit({kind:'list',filter:'weak'}):renderList('weak');};
   $('#settings').onclick=()=>$('#modal').classList.add('show');
   $('#close').onclick=()=>$('#modal').classList.remove('show');
-  $('#reset').onclick=()=>{if(confirm('全記録を消しますか？')){S=blank();save();renderHome();$('#modal').classList.remove('show');}};
+  $('#reset').onclick=()=>{if(confirm('全記録を消しますか？')){const r=regionKey();S=blank();S.currentRegion=r;Q=window.QUIZ_BANKS[r];save();renderHome();$('#modal').classList.remove('show');}};
   $('#export').onclick=exportData;
   $('#import').onchange=e=>e.target.files[0]&&importData(e.target.files[0]);
   $('#seen').closest('.stat').onclick=()=>statDestination('answered');

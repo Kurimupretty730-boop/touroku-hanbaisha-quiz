@@ -1,0 +1,27 @@
+{
+  "kumamoto_total": 720,
+  "by_year": {
+    "1": 120,
+    "2": 120,
+    "3": 120,
+    "4": 120,
+    "5": 120,
+    "6": 120
+  },
+  "by_chapter_each_year": {
+    "1": 20,
+    "2": 20,
+    "3": 40,
+    "4": 20,
+    "5": 20
+  },
+  "numbering_checks": "PASS",
+  "standard_answers_parsed": 718,
+  "all_correct_special_cases": [
+    "KUM-R6-C3-Q09",
+    "KUM-R6-C5-Q04"
+  ],
+  "explanations_present": 697,
+  "explanations_absent": 23,
+  "content_policy": "問題・正答・解説はユーザー提供Verifiedテキストから収録。空欄の解説は創作しない。"
+}
